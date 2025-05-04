@@ -1,0 +1,66 @@
+[global]
+origin = center
+alignment = center
+padding = 10
+font = Monospace 12
+timeout = 1000
+
+# Remove border
+frame_width = 0
+frame_color = "#000000"
+
+# Rounded corners (requires dunst to be compiled with cairo support)
+corner_radius = 15
+progress_bar_corner_radius = 10
+progress_bar_height = 30
+progress_bar_color = "#FFFFFF"  # Your desired color
+
+
+[volume]
+appname = "notify-send"
+summary = "Volume"
+timeout = 1
+background = "#2e3440"  # Transparent background
+foreground = "#FFFFFF"
+
+[brightness]
+appname = "notify-send"
+summary = "Brightness"
+timeout = 1
+background = "#2e3440"
+foreground = "#FFFFFF"
+
+[keyboardbrightness]
+appname = "notify-send"
+summary = "Backlight brightness"
+timeout = 1
+background = "#2e3440"
+foreground = "#FFFFFF"
+
+[mute]
+appname = "notify-send"
+summary = "Volume muted"
+timeout = 1
+background = "#2e3440"
+foreground = "#FFFFFF"
+
+[unmute]
+appname = "notify-send"
+summary = "Volume unmuted"
+timeout = 1
+background = "#2e3440"
+foreground = "#FFFFFF"
+
+[micmute]
+appname = "notify-send"
+summary = "Microphone muted"
+timeout = 1
+background = "#2e3440"
+foreground = "#FFFFFF"
+
+[micunmute]
+appname = "notify-send"
+summary = "Microphone unmuted"
+timeout = 1
+background = "#2e3440"
+foreground = "#FFFFFF"
