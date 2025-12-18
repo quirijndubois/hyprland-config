@@ -3,14 +3,15 @@
   "position": "top",
   "height": 24,
   "spacing": 5,
-  "modules-left": ["wlr/taskbar"],
+  "modules-left": ["clock"],
   "wlr/taskbar": {
       "icon-size": 16,
       "tooltip-format": "{title}",
-      "on-click": "activate"
+      "on-click": "activate",
+      "tooltip": true
   },
   "modules-center": ["hyprland/workspaces"],
-  "modules-right": ["cpu","memory","pulseaudio","tray","date","clock"],
+  "modules-right": ["cpu","memory","pulseaudio","tray","date"],
   "tray": {
       "icon-size": 16,
       "spacing": 10
@@ -25,13 +26,19 @@
   "on-click-right": "pavucontrol"
 },
 "clock": {
-  "format": "{:%a %d %b %H:%M:%S}",
+  "format": "{:%d %b %H:%M:%S}",
   "interval": 1
 },
 "cpu": {
-  "format": "CPU:{usage}%"
+  "format": "{icon} {usage}%",
+  "format-icons": {
+    "default": ["\uf4bc"]
+  }
 },
 "memory": {
-    "format": "RAM:{percentage}%"
+    "format": "{icon} {percentage}%",
+    "format-icons": {
+        "default": ["\uefc5"]
+    }
 }
 }

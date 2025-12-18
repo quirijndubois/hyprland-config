@@ -1,70 +1,97 @@
 
 
 * {
-    font-family: "JetBrainsMono Nerd Font", "Font Awesome 6 Free", sans-serif;
-}
-
-#waybar {
-    background: rgba(255, 255, 255, 0);
-    color: white;
-    font-size: 16px;
-}
-
-.modules-left{
-    border-radius: 10px;
-    margin-left: 10px;
-    margin-top: 10px;
-    background-color: #2e3440;
-}
-
-.modules-center{
-    border-radius: 10px;
-    border-radius: 10px;
-    margin-top: 10px;
-    background-color: #2e3440;
-}
-
-.modules-right{
-    border-radius: 10px;
-    margin-right: 10px;
-    margin-top: 10px;
-    background-color: #2e3440;
-}
-
-.module:not(box):hover{
-    background-color: rgba(0, 0, 0, .3);
+    font-family: "JetBrainsMono Nerd Font", sans-serif;
+    font-weight: bold;
+    padding: 0px;
+    margin: 0px;
 }
 
 
-.module{
-    color: white;
-    border-radius: 10px;
-    margin: 0px 0px;
-    padding: 0px 10px;
+#clock.module{
+    color: rgb(255, 255, 255);
+}
+
+#cpu.module{
+    color: rgb(255, 103, 103);
+}
+
+#memory.module{
+    color: rgb(127, 255, 146);
+}
+
+#pulseaudio.module{
+    color: rgb(119, 164, 255);
 }
 
 .module > * {
     color: white;
 }
 
+box.module, .module{
+    background-color: rgba(20, 10, 46, 1);
+}
+
+box.module button {
+    background-color: rgba(59, 59, 59, 0);
+}
+
+
+box.module button.active {
+    background-color: rgb(97, 205, 255);
+    color: black;
+}
+
+/*##################################*/
+
+#waybar {
+    background: transparent;
+    font-size: 15px;
+}
+
+.modules-left{
+    margin-left: 10px;
+    margin-top: 10px;
+}
+
+.modules-center{
+    margin-top: 10px;
+}
+
+.modules-right{
+    margin-right: 10px;
+    margin-top: 10px;
+}
+
+.module{
+    border-radius: 100px;
+    margin: 0px 0px;
+    padding: 0px 20px;
+}
+
+/* for workspaces we want a nice contanct padding  */
+box #workspaces.horizontal.module{
+    padding: 5px;
+}
+
 box.module button{
-    border-radius: 10px;
+    border-radius: 100px;
+    padding-left: 5px;
+    padding-right: 5px;
+    transition: padding 0.5s ease, background-color 0.5s ease, color 0.5s ease;
+
 }
 
-box.module{
-    padding: 0px;
+box.module button.active {
+    border-radius: 100px;
+    padding-left: 20px;
+    padding-right: 20px;
 }
-
-box.module button.active{
-    background-color: rgba(0, 0, 0, .3);
-}
-
 
 .module button {
     border: none;
     animation: none;
     background-color: transparent;
-    transition: background-color 0.3s ease;
 }
 
 .module button:hover {
@@ -73,5 +100,5 @@ box.module button.active{
     box-shadow: none;
     text-shadow: none;
     text-decoration: none;
-    background: rgba(0, 0, 0, .3);
 }
+
