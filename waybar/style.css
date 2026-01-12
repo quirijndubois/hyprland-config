@@ -13,16 +13,30 @@
 }
 
 #cpu.module{
-    color: rgb(255, 103, 103);
+    color: rgb(103, 176, 255);
 }
 
 #memory.module{
-    color: rgb(127, 255, 146);
+    color: rgb(255, 146, 127);
 }
 
 #pulseaudio.module{
-    color: rgb(119, 164, 255);
+    color: rgb(222, 255, 122);
 }
+
+#bluetooth.module{
+    color: rgb(122, 255, 246);
+}
+
+#battery.module{
+    color: rgb(152, 255, 118);
+}
+
+#network.module{
+    color: rgb(255, 192, 109);
+}
+
+
 
 .module > * {
     color: white;
