@@ -1,118 +1,114 @@
-
-
 * {
-    font-family: "JetBrainsMono Nerd Font", sans-serif;
-    font-weight: bold;
-    padding: 0px;
-    margin: 0px;
+	font-family: "JetBrainsMono Nerd Font", sans-serif;
+	font-weight: bold;
+	padding: 0px;
+	margin: 0px;
 }
 
 
-#clock.module{
-    color: rgb(255, 255, 255);
+#clock.module {
+	color: rgb(255, 255, 255);
 }
 
-#cpu.module{
-    color: rgb(103, 176, 255);
+#cpu.module {
+	color: rgb(103, 176, 255);
 }
 
-#memory.module{
-    color: rgb(255, 146, 127);
+#memory.module {
+	color: rgb(255, 146, 127);
 }
 
-#pulseaudio.module{
-    color: rgb(222, 255, 122);
+#pulseaudio.module {
+	color: rgb(222, 255, 122);
 }
 
-#bluetooth.module{
-    color: rgb(122, 255, 246);
+#bluetooth.module {
+	color: rgb(122, 255, 246);
 }
 
-#battery.module{
-    color: rgb(152, 255, 118);
+#battery.module {
+	color: rgb(152, 255, 118);
 }
 
-#network.module{
-    color: rgb(255, 192, 109);
+#network.module {
+	color: rgb(255, 192, 109);
 }
 
-
-
-.module > * {
-    color: white;
+.module>* {
+	color: white;
 }
 
-box.module, .module{
-    background-color: rgba(20, 10, 46, 1);
+box.module,
+.module {
+	background-color: rgba(20, 10, 46, 1);
 }
 
 box.module button {
-    background-color: rgba(59, 59, 59, 0);
+	background-color: rgba(59, 59, 59, 0);
 }
 
 
 box.module button.active {
-    background-color: rgb(97, 205, 255);
-    color: black;
+	background-color: rgb(97, 205, 255);
+	color: black;
 }
 
 /*##################################*/
 
 #waybar {
-    background: transparent;
-    font-size: 15px;
+	background: transparent;
+	font-size: 15px;
 }
 
-.modules-left{
-    margin-left: 10px;
-    margin-top: 10px;
+.modules-left {
+	margin-left: 10px;
+	margin-top: 10px;
 }
 
-.modules-center{
-    margin-top: 10px;
+.modules-center {
+	margin-top: 10px;
 }
 
-.modules-right{
-    margin-right: 10px;
-    margin-top: 10px;
+.modules-right {
+	margin-right: 10px;
+	margin-top: 10px;
 }
 
-.module{
-    border-radius: 100px;
-    margin: 0px 0px;
-    padding: 0px 20px;
+.module {
+	border-radius: 100px;
+	margin: 0px 0px;
+	padding: 0px 20px;
 }
 
 /* for workspaces we want a nice contanct padding  */
-box #workspaces.horizontal.module{
-    padding: 5px;
+box #workspaces.horizontal.module {
+	padding: 5px;
 }
 
-box.module button{
-    border-radius: 100px;
-    padding-left: 5px;
-    padding-right: 5px;
-    transition: padding 0.5s ease, background-color 0.5s ease, color 0.5s ease;
+box.module button {
+	border-radius: 100px;
+	padding-left: 5px;
+	padding-right: 5px;
+	transition: padding 0.5s ease, background-color 0.5s ease, color 0.5s ease;
 
 }
 
 box.module button.active {
-    border-radius: 100px;
-    padding-left: 20px;
-    padding-right: 20px;
+	border-radius: 100px;
+	padding-left: 20px;
+	padding-right: 20px;
 }
 
 .module button {
-    border: none;
-    animation: none;
-    background-color: transparent;
+	border: none;
+	animation: none;
+	background-color: transparent;
 }
 
 .module button:hover {
-    background: none;
-    border: none;
-    box-shadow: none;
-    text-shadow: none;
-    text-decoration: none;
+	background: none;
+	border: none;
+	box-shadow: none;
+	text-shadow: none;
+	text-decoration: none;
 }
-
