@@ -61,14 +61,14 @@
     "max-length": 8,
     "ellipsis": true,
     "tooltip": true,
-    "on-click": "nm-connection-editor"
+    "on-click": "kitty nmtui"
 },
 "bluetooth": {
     "format": " {status}",
     "format-disabled": "󰂲 off",
     "format-connected": " {num_connections}",
     "tooltip-format": "{controller_alias}\nConnected: {num_connections}",
-    "on-click": "blueman-manager"
+    "on-click": "kitty bluetui"
 }
 
 }
