@@ -131,7 +131,7 @@ FloatingWindow {
         { id: "monocle",   label: "monocle",   desc: "fullscreen stack" },
     ]
 
-    readonly property var mainItems: [
+    property var mainItems: [
         { id: "wallpaper",     label: "wallpaper" },
         { id: "palette",       label: "palette" },
         { id: "design",        label: "design" },
@@ -245,6 +245,26 @@ FloatingWindow {
         }
     }
 
+    Process { id: saveItemsProc }
+
+    Process {
+        id: loadItemsProc
+        command: ["sh", "-c", "cat $HOME/.config/quickshell/main-items 2>/dev/null"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const ids = this.text.trim().split(/\s+/).filter(id => id.length > 0)
+                if (ids.length > 0) {
+                    const order = {}
+                    ids.forEach((id, i) => { order[id] = i })
+                    const items = Array.from(root.mainItems)
+                    items.sort((a, b) => (order[a.id] ?? 999) - (order[b.id] ?? 999))
+                    root.mainItems = items
+                }
+            }
+        }
+    }
+
     function applyLayout(id) {
         root.currentLayout = id
         layoutProc.command = ["sh", "-c",
@@ -285,6 +305,13 @@ FloatingWindow {
 
     function launchApp(exec) {
         Quickshell.execDetached(["sh", "-c", root.cleanExec(exec)])
+    }
+
+    function saveMainItems() {
+        const ids = root.mainItems.map(m => m.id).join(" ")
+        saveItemsProc.command = ["sh", "-c", "printf '%s' '" + ids + "' > $HOME/.config/quickshell/main-items"]
+        saveItemsProc.running = false
+        saveItemsProc.running = true
     }
 
     Connections {
@@ -337,7 +364,16 @@ FloatingWindow {
             }
 
             if (event.key === Qt.Key_Up) {
-                if (inSearch) {
+                const shift = event.modifiers & 0x02000000
+                if (shift && root.page === "main" && root.selectedIndex > 0) {
+                    const items = Array.from(root.mainItems)
+                    const tmp = items[root.selectedIndex]
+                    items[root.selectedIndex] = items[root.selectedIndex - 1]
+                    items[root.selectedIndex - 1] = tmp
+                    root.selectedIndex--
+                    root.mainItems = items
+                    root.saveMainItems()
+                } else if (inSearch) {
                     if (root.selectedSearchIndex > 0) {
                         root.selectedSearchIndex--
                         searchList.positionViewAtIndex(root.selectedSearchIndex, ListView.Contain)
@@ -362,34 +398,41 @@ FloatingWindow {
             }
 
             if (event.key === Qt.Key_Down) {
-                if (inSearch) {
+                const shift = event.modifiers & 0x02000000
+                const maxIdx = root.page === "main"       ? root.mainItems.length - 1
+                             : root.page === "wallpaper"   ? Math.max(0, root.wallpaperFiles.length - 1)
+                             : root.page === "apps"         ? Math.max(0, root.appsList.length - 1)
+                             : root.page === "bluetooth"    ? Math.max(0, root.bluetoothDevices.length - 1)
+                             : root.page === "design"       ? root.designOptions.length - 1
+                             : root.page === "layout"       ? root.layoutOptions.length - 1
+                             : root.paletteOptions.length - 1
+                if (shift && root.page === "main" && root.selectedIndex < maxIdx) {
+                    const items = Array.from(root.mainItems)
+                    const tmp = items[root.selectedIndex]
+                    items[root.selectedIndex] = items[root.selectedIndex + 1]
+                    items[root.selectedIndex + 1] = tmp
+                    root.selectedIndex++
+                    root.mainItems = items
+                    root.saveMainItems()
+                } else if (inSearch) {
                     if (root.selectedSearchIndex < root.searchResults.length - 1) {
                         root.selectedSearchIndex++
                         searchList.positionViewAtIndex(root.selectedSearchIndex, ListView.Contain)
                     }
-                } else {
-                    const maxIdx = root.page === "main"       ? root.mainItems.length - 1
-                                 : root.page === "wallpaper"   ? Math.max(0, root.wallpaperFiles.length - 1)
-                                 : root.page === "apps"         ? Math.max(0, root.appsList.length - 1)
-                                 : root.page === "bluetooth"    ? Math.max(0, root.bluetoothDevices.length - 1)
-                                 : root.page === "design"       ? root.designOptions.length - 1
-                                 : root.page === "layout"       ? root.layoutOptions.length - 1
-                                 : root.paletteOptions.length - 1
-                    if (root.selectedIndex < maxIdx) {
-                        root.selectedIndex++
-                        if (root.page === "wallpaper")
-                            wpList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
-                        else if (root.page === "palette")
-                            paletteList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
-                        else if (root.page === "apps")
-                            appListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
-                        else if (root.page === "bluetooth")
-                            btListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
-                        else if (root.page === "design")
-                            designList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
-                        else if (root.page === "layout")
-                            layoutList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
-                    }
+                } else if (root.selectedIndex < maxIdx) {
+                    root.selectedIndex++
+                    if (root.page === "wallpaper")
+                        wpList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "palette")
+                        paletteList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "apps")
+                        appListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "bluetooth")
+                        btListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "design")
+                        designList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "layout")
+                        layoutList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 }
                 event.accepted = true
                 return
