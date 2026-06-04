@@ -35,10 +35,10 @@ local browser = "firefox"
 -- See https://wiki.hypr.land/Configuring/Basics/Autostart/
 hl.on("hyprland.start", function()
 	hl.exec_cmd('kitty -e zsh -c "sleep 1 && hyfetch; exec zsh"')
-	hl.exec_cmd("waybar")
+	-- hl.exec_cmd("waybar")
 	hl.exec_cmd("solaar --window=hide")
-	hl.exec_cmd("hyprpaper")
 	hl.exec_cmd("hypridle")
+	hl.exec_cmd("awww-daemon")
 	hl.exec_cmd("hyprctl dispatch workspace 1")
 end)
 
@@ -133,6 +133,18 @@ hl.config({
 	},
 })
 
+--------------------
+---- WINDOW RULES --
+--------------------
+
+hl.window_rule({
+	name = "qs-settings",
+	match = { class = "org.quickshell", title = "Quickshell Settings" },
+	float = true,
+	pin = true,
+	move = "center center",
+})
+
 ----------------
 ----  MISC  ----
 ----------------
@@ -191,7 +203,9 @@ hl.bind(mainMod .. " + SHIFT + Tab", hl.dsp.focus({ workspace = "m-1" }))
 
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + W", hl.dsp.window.close())
-hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("hyprctl dispatch exit"))
+hl.bind(mainMod .. " + SHIFT + M", function()
+	hl.exec_cmd("hyprctl dispatch exit")
+end)
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(menu))
@@ -201,6 +215,7 @@ hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(browser))
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen())
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("hyprpicker -a"))
 hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("hyprshot -m region"))
+hl.bind(mainMod .. " + S", hl.dsp.exec_cmd("quickshell ipc call settings toggle"))
 
 -- Move focus with arrow keys and vim keys
 hl.bind(mainMod .. " + left", hl.dsp.focus({ direction = "left" }))
@@ -223,14 +238,30 @@ hl.bind(mainMod .. " + SHIFT + K", hl.dsp.window.move({ direction = "up" }))
 hl.bind(mainMod .. " + SHIFT + J", hl.dsp.window.move({ direction = "down" }))
 
 -- Resize windows
-hl.bind(mainMod .. " + CTRL + right", hl.dsp.exec_cmd("hyprctl dispatch resizeactive 100 0"))
-hl.bind(mainMod .. " + CTRL + left", hl.dsp.exec_cmd("hyprctl dispatch resizeactive -100 0"))
-hl.bind(mainMod .. " + CTRL + up", hl.dsp.exec_cmd("hyprctl dispatch resizeactive 0 -100"))
-hl.bind(mainMod .. " + CTRL + down", hl.dsp.exec_cmd("hyprctl dispatch resizeactive 0 100"))
-hl.bind(mainMod .. " + CTRL + L", hl.dsp.exec_cmd("hyprctl dispatch resizeactive 100 0"))
-hl.bind(mainMod .. " + CTRL + H", hl.dsp.exec_cmd("hyprctl dispatch resizeactive -100 0"))
-hl.bind(mainMod .. " + CTRL + K", hl.dsp.exec_cmd("hyprctl dispatch resizeactive 0 -100"))
-hl.bind(mainMod .. " + CTRL + J", hl.dsp.exec_cmd("hyprctl dispatch resizeactive 0 100"))
+hl.bind(mainMod .. " + CTRL + right", function()
+	hl.exec_cmd("hyprctl dispatch resizeactive 100 0")
+end, { repeating = true })
+hl.bind(mainMod .. " + CTRL + left", function()
+	hl.exec_cmd("hyprctl dispatch resizeactive -100 0")
+end, { repeating = true })
+hl.bind(mainMod .. " + CTRL + up", function()
+	hl.exec_cmd("hyprctl dispatch resizeactive 0 -100")
+end, { repeating = true })
+hl.bind(mainMod .. " + CTRL + down", function()
+	hl.exec_cmd("hyprctl dispatch resizeactive 0 100")
+end, { repeating = true })
+hl.bind(mainMod .. " + CTRL + L", function()
+	hl.exec_cmd("hyprctl dispatch resizeactive 100 0")
+end, { repeating = true })
+hl.bind(mainMod .. " + CTRL + H", function()
+	hl.exec_cmd("hyprctl dispatch resizeactive -100 0")
+end, { repeating = true })
+hl.bind(mainMod .. " + CTRL + K", function()
+	hl.exec_cmd("hyprctl dispatch resizeactive 0 -100")
+end, { repeating = true })
+hl.bind(mainMod .. " + CTRL + J", function()
+	hl.exec_cmd("hyprctl dispatch resizeactive 0 100")
+end, { repeating = true })
 
 -- Switch workspaces and move windows to workspaces
 for i = 1, 9 do
