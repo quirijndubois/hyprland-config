@@ -20,6 +20,7 @@ FloatingWindow {
 
     property string page: "main"
     property string activeSubPage: "wallpaper"
+    property string requestedPage: "main"
     property int selectedIndex: 0
     property string searchQuery: ""
     property int selectedSearchIndex: 0
@@ -140,7 +141,8 @@ FloatingWindow {
     onVisibleChanged: {
         if (visible) {
             monitorName = Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : ""
-            page = "main"
+            page = requestedPage
+            requestedPage = "main"
             selectedIndex = 0
             searchQuery = ""
             Qt.callLater(() => keyNav.forceActiveFocus())

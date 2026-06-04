@@ -8,6 +8,7 @@ ShellRoot {
     id: root
 
     property bool settingsOpen: false
+    property string requestedPage: "main"
 
     IpcHandler {
         target: "settings"
@@ -15,6 +16,12 @@ ShellRoot {
         function toggle() { root.settingsOpen = !root.settingsOpen }
         function open()   { root.settingsOpen = true }
         function close()  { root.settingsOpen = false }
+    }
+
+    IpcHandler {
+        target: "settings-apps"
+
+        function open() { root.requestedPage = "apps"; root.settingsOpen = true }
     }
 
     // Ensure awww-daemon is running for wallpaper changes
@@ -25,7 +32,8 @@ ShellRoot {
 
     SettingsWindow {
         visible: root.settingsOpen
-        onCloseRequested: root.settingsOpen = false
+        requestedPage: root.requestedPage
+        onCloseRequested: { root.requestedPage = "main"; root.settingsOpen = false }
     }
 
     Variants {

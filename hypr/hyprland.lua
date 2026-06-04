@@ -25,7 +25,6 @@ hl.workspace_rule({ workspace = "9", monitor = "HDMI-A-1" })
 
 local terminal = "kitty"
 local fileManager = "dolphin"
-local menu = "wofi --show drun"
 local browser = "firefox"
 
 -------------------
@@ -212,7 +211,7 @@ hl.bind(
 
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(menu))
+hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd("quickshell ipc call settings-apps open"))
 -- hl.bind(mainMod .. " + I",        hl.dsp.layout("togglesplit"))
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(browser))
 -- hl.bind(mainMod .. " + L",        hl.dsp.exec_cmd("hyprlock"))
