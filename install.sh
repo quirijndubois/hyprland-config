@@ -29,7 +29,7 @@ sync_dir() {
 sync_all() {
   changed=0
 
-  for dir in hypr waybar wofi dunst kitty quickshell; do
+  for dir in hypr wofi dunst kitty quickshell; do
     if sync_dir "$dir"; then
       changed=1
     fi
@@ -48,7 +48,7 @@ echo "Install complete"
 if [ "$WATCH_MODE" -eq 1 ]; then
   echo "Watching for changes..."
   inotifywait -m -r -e modify,create,delete,move \
-    hypr waybar wofi dunst kitty quickshell |
+    hypr wofi dunst kitty quickshell |
   while read -r _; do
     sync_all
   done
