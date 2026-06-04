@@ -12,8 +12,8 @@ sync_dir() {
   src="$1"
   dest="$CONFIG_DIR/$1"
 
-  # Capture rsync output
-  changes=$(rsync -a --itemize-changes "$src/" "$dest/" \
+  # Capture rsync output, exclude main-items (user-specific)
+  changes=$(rsync -a --itemize-changes --exclude=main-items "$src/" "$dest/" \
     | awk '/^[><]f/ { print $2 }')
 
   if [ -n "$changes" ]; then
@@ -42,6 +42,14 @@ sync_all() {
 
 # Initial sync
 sync_all
+
+# Create default main-items order if it doesn't exist yet
+quickshell_config="$CONFIG_DIR/quickshell"
+if [ ! -f "$quickshell_config/main-items" ]; then
+  printf 'wallpaper palette design layout apps bluetooth\n' > "$quickshell_config/main-items"
+  echo "main-items has been created!"
+fi
+
 echo "Install complete"
 
 # Watch mode

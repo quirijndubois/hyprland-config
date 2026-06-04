@@ -7,7 +7,7 @@ A personal [Hyprland](https://hyprland.org) desktop setup with a custom [Quicksh
 ## Features
 
 - **Quickshell bar** - modular panel with workspaces, system stats (CPU, memory, battery), clock, audio, network, Bluetooth, and system tray
-- **Settings overlay** - press `Alt+S` to open a floating settings window with fuzzy search across wallpapers, color palettes, bar designs, layouts, and apps
+- **Settings overlay** - press `Alt+S` to open a floating settings window with fuzzy search across wallpapers, color palettes, bar designs, layouts, and apps. Reorder the main menu with `Shift+Up`/`Shift+Down` (persisted across restarts)
 - **12 color palettes** - Catppuccin, Tokyo Night, Gruvbox, Nord, Dracula, Rose Pine, One Dark, Everforest, Solarized, and more - switch on the fly
 - **7 bar designs** - default, compact, islands (floating pills), bold, minimal, clean (sans-serif), and hacker
 - **4 Hyprland layouts** - dwindle, master, spiral, and split - toggleable from settings
