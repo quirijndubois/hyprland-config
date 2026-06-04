@@ -6,7 +6,13 @@ import QtQuick
 Singleton {
     id: root
 
-    property string name: "mocha"
+    property string name:          "mocha"
+    property string design:        "default"
+    property int    barHeight:     30
+    property int    barFontSize:   13
+    property string barFontFamily: "JetBrains Mono"
+    property bool   barFontBold:   false
+    property string separatorText: "  │  "
 
     property color base:    "#1e1e2e"
     property color surface: "#181825"
@@ -46,6 +52,36 @@ Singleton {
             text="#ebdbb2"; subtext="#928374"
             blue="#83a598"; green="#b8bb26"; red="#fb4934"
             yellow="#fabd2f"; teal="#8ec07c"; purple="#d3869b"
+        } else if (n === "nord") {
+            base="#2e3440"; surface="#3b4252"; border="#434c5e"
+            text="#eceff4"; subtext="#4c566a"
+            blue="#81a1c1"; green="#a3be8c"; red="#bf616a"
+            yellow="#ebcb8b"; teal="#88c0d0"; purple="#b48ead"
+        } else if (n === "dracula") {
+            base="#282a36"; surface="#21222c"; border="#44475a"
+            text="#f8f8f2"; subtext="#6272a4"
+            blue="#6272a4"; green="#50fa7b"; red="#ff5555"
+            yellow="#f1fa8c"; teal="#8be9fd"; purple="#bd93f9"
+        } else if (n === "rosepine") {
+            base="#191724"; surface="#1f1d2e"; border="#26233a"
+            text="#e0def4"; subtext="#6e6a86"
+            blue="#9ccfd8"; green="#31748f"; red="#eb6f92"
+            yellow="#f6c177"; teal="#ebbcba"; purple="#c4a7e7"
+        } else if (n === "onedark") {
+            base="#282c34"; surface="#21252b"; border="#3e4451"
+            text="#abb2bf"; subtext="#5c6370"
+            blue="#61afef"; green="#98c379"; red="#e06c75"
+            yellow="#e5c07b"; teal="#56b6c2"; purple="#c678dd"
+        } else if (n === "everforest") {
+            base="#2d353b"; surface="#232a2e"; border="#3d484d"
+            text="#d3c6aa"; subtext="#7a8478"
+            blue="#7fbbb3"; green="#a7c080"; red="#e67e80"
+            yellow="#dbbc7f"; teal="#83c092"; purple="#d699b6"
+        } else if (n === "solarized") {
+            base="#002b36"; surface="#073642"; border="#586e75"
+            text="#839496"; subtext="#657b83"
+            blue="#268bd2"; green="#859900"; red="#dc322f"
+            yellow="#b58900"; teal="#2aa198"; purple="#6c71c4"
         } else {
             // mocha (default)
             base="#1e1e2e"; surface="#181825"; border="#313244"
@@ -55,7 +91,39 @@ Singleton {
         }
     }
 
-    // Apply after full construction so all properties are ready
+    function applyDesign(d) {
+        if (d === "compact") {
+            barHeight = 24; barFontSize = 11
+            barFontFamily = "JetBrains Mono"; barFontBold = false
+            separatorText = "  │  "
+        } else if (d === "islands") {
+            barHeight = 30; barFontSize = 13
+            barFontFamily = "JetBrains Mono"; barFontBold = false
+            separatorText = "  │  "
+        } else if (d === "bold") {
+            barHeight = 40; barFontSize = 14
+            barFontFamily = "JetBrains Mono"; barFontBold = true
+            separatorText = "  │  "
+        } else if (d === "minimal") {
+            barHeight = 18; barFontSize = 9
+            barFontFamily = "JetBrains Mono"; barFontBold = false
+            separatorText = " · "
+        } else if (d === "clean") {
+            barHeight = 30; barFontSize = 13
+            barFontFamily = "Noto Sans"; barFontBold = false
+            separatorText = "  /  "
+        } else if (d === "hacker") {
+            barHeight = 32; barFontSize = 12
+            barFontFamily = "Hack"; barFontBold = false
+            separatorText = "  |  "
+        } else {
+            // default
+            barHeight = 30; barFontSize = 13
+            barFontFamily = "JetBrains Mono"; barFontBold = false
+            separatorText = "  │  "
+        }
+    }
+
     Component.onCompleted: applyPalette(name)
 
     onNameChanged: {
@@ -65,7 +133,15 @@ Singleton {
         saveProc.running = true
     }
 
+    onDesignChanged: {
+        applyDesign(design)
+        saveDesignProc.command = ["sh", "-c", "printf '%s' '" + design + "' > $HOME/.config/quickshell/design"]
+        saveDesignProc.running = false
+        saveDesignProc.running = true
+    }
+
     Process { id: saveProc }
+    Process { id: saveDesignProc }
 
     Process {
         id: loadProc
@@ -75,6 +151,18 @@ Singleton {
             onStreamFinished: {
                 const saved = this.text.trim()
                 if (saved) root.name = saved
+            }
+        }
+    }
+
+    Process {
+        id: loadDesignProc
+        command: ["sh", "-c", "cat $HOME/.config/quickshell/design 2>/dev/null"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const saved = this.text.trim()
+                if (saved) root.design = saved
             }
         }
     }

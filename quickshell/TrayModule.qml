@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell
-import Quickshell.Widgets
 import Quickshell.Services.SystemTray
 
 Row {
@@ -17,10 +16,18 @@ Row {
             width: 16
             height: 16
 
-            IconImage {
+            Image {
                 anchors.fill: parent
-                source: modelData.icon
-                implicitSize: 16
+                source: {
+                    const icon = modelData.icon
+                    if (!icon) return ""
+                    if (icon.startsWith("/")) return "file://" + icon
+                    return Quickshell.iconPath(icon, true)
+                }
+                sourceSize: Qt.size(16, 16)
+                fillMode: Image.PreserveAspectFit
+                asynchronous: true
+                smooth: true
             }
 
             QsMenuAnchor {

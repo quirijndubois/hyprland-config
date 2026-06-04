@@ -37,7 +37,7 @@ ShellRoot {
                 screen: modelData
 
                 anchors { top: true; left: true; right: true }
-                implicitHeight: 30
+                implicitHeight: Theme.barHeight
                 color: "transparent"
                 exclusiveZone: implicitHeight
 
@@ -45,13 +45,26 @@ ShellRoot {
 
                 Rectangle {
                     anchors.fill: parent
-                    color: Theme.base
+                    color: Theme.design === "islands" ? "transparent" : Theme.base
 
-                    // Bottom border
+                    // Bottom border — hidden in islands mode
                     Rectangle {
+                        visible: Theme.design !== "islands"
                         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                         height: 1
                         color: Theme.border
+                    }
+
+                    // ── Left island background ─────────────────
+                    Rectangle {
+                        visible: Theme.design === "islands"
+                        anchors { left: parent.left; leftMargin: 8; verticalCenter: parent.verticalCenter }
+                        width: leftRow.implicitWidth + 24
+                        height: parent.height - 8
+                        color: Theme.surface
+                        radius: 8
+                        border.color: Theme.border
+                        border.width: 1
                     }
 
                     Row {
@@ -59,7 +72,7 @@ ShellRoot {
                         anchors {
                             left: parent.left
                             verticalCenter: parent.verticalCenter
-                            leftMargin: 16
+                            leftMargin: Theme.design === "islands" ? 20 : 16
                         }
                         spacing: 0
 
@@ -82,7 +95,20 @@ ShellRoot {
                         MemoryModule {}
                     }
 
+                    // ── Center island background ───────────────
+                    Rectangle {
+                        visible: Theme.design === "islands"
+                        anchors { horizontalCenter: parent.horizontalCenter; verticalCenter: parent.verticalCenter }
+                        width: centerRow.implicitWidth + 24
+                        height: parent.height - 8
+                        color: Theme.surface
+                        radius: 8
+                        border.color: Theme.border
+                        border.width: 1
+                    }
+
                     Row {
+                        id: centerRow
                         anchors {
                             horizontalCenter: parent.horizontalCenter
                             verticalCenter: parent.verticalCenter
@@ -92,12 +118,24 @@ ShellRoot {
                         WorkspacesModule { monitor: hyprMonitor }
                     }
 
+                    // ── Right island background ────────────────
+                    Rectangle {
+                        visible: Theme.design === "islands"
+                        anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
+                        width: rightRow.implicitWidth + 24
+                        height: parent.height - 8
+                        color: Theme.surface
+                        radius: 8
+                        border.color: Theme.border
+                        border.width: 1
+                    }
+
                     Row {
                         id: rightRow
                         anchors {
                             right: parent.right
                             verticalCenter: parent.verticalCenter
-                            rightMargin: 16
+                            rightMargin: Theme.design === "islands" ? 20 : 16
                         }
                         spacing: 0
 

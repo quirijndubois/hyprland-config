@@ -36,6 +36,7 @@ local browser = "firefox"
 hl.on("hyprland.start", function()
 	hl.exec_cmd('kitty -e zsh -c "sleep 1 && hyfetch; exec zsh"')
 	-- hl.exec_cmd("waybar")
+	hl.exec_cmd("quickshell")
 	hl.exec_cmd("solaar --window=hide")
 	hl.exec_cmd("hypridle")
 	hl.exec_cmd("awww-daemon")
@@ -203,9 +204,12 @@ hl.bind(mainMod .. " + SHIFT + Tab", hl.dsp.focus({ workspace = "m-1" }))
 
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + W", hl.dsp.window.close())
-hl.bind(mainMod .. " + SHIFT + M", function()
-	hl.exec_cmd("hyprctl dispatch exit")
-end)
+
+hl.bind(
+	mainMod .. " + M",
+	hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'")
+)
+
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd(menu))
@@ -238,30 +242,15 @@ hl.bind(mainMod .. " + SHIFT + K", hl.dsp.window.move({ direction = "up" }))
 hl.bind(mainMod .. " + SHIFT + J", hl.dsp.window.move({ direction = "down" }))
 
 -- Resize windows
-hl.bind(mainMod .. " + CTRL + right", function()
-	hl.exec_cmd("hyprctl dispatch resizeactive 100 0")
-end, { repeating = true })
-hl.bind(mainMod .. " + CTRL + left", function()
-	hl.exec_cmd("hyprctl dispatch resizeactive -100 0")
-end, { repeating = true })
-hl.bind(mainMod .. " + CTRL + up", function()
-	hl.exec_cmd("hyprctl dispatch resizeactive 0 -100")
-end, { repeating = true })
-hl.bind(mainMod .. " + CTRL + down", function()
-	hl.exec_cmd("hyprctl dispatch resizeactive 0 100")
-end, { repeating = true })
-hl.bind(mainMod .. " + CTRL + L", function()
-	hl.exec_cmd("hyprctl dispatch resizeactive 100 0")
-end, { repeating = true })
-hl.bind(mainMod .. " + CTRL + H", function()
-	hl.exec_cmd("hyprctl dispatch resizeactive -100 0")
-end, { repeating = true })
-hl.bind(mainMod .. " + CTRL + K", function()
-	hl.exec_cmd("hyprctl dispatch resizeactive 0 -100")
-end, { repeating = true })
-hl.bind(mainMod .. " + CTRL + J", function()
-	hl.exec_cmd("hyprctl dispatch resizeactive 0 100")
-end, { repeating = true })
+hl.bind(mainMod .. " + CTRL + H", hl.dsp.window.resize({ x = -50, y = 0, relative = true }))
+
+hl.bind(mainMod .. " + CTRL + L", hl.dsp.window.resize({ x = 50, y = 0, relative = true }))
+
+hl.bind(mainMod .. " + CTRL + K", hl.dsp.window.resize({ x = 0, y = -50, relative = true }))
+
+hl.bind(mainMod .. " + CTRL + J", hl.dsp.window.resize({ x = 0, y = 50, relative = true }))
+
+hl.bind(mainMod .. " + I", hl.dsp.layout("togglesplit"))
 
 -- Switch workspaces and move windows to workspaces
 for i = 1, 9 do

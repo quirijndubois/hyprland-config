@@ -17,9 +17,9 @@ Row {
 
             text: focused ? "[" + modelData.name + "]" : modelData.name
             color: focused ? Theme.blue : Theme.subtext
-            font.family: "JetBrains Mono"
-            font.bold: focused
-            font.pixelSize: 13
+            font.family: Theme.barFontFamily
+            font.bold: focused || Theme.barFontBold
+            font.pixelSize: Theme.barFontSize
             verticalAlignment: Text.AlignVCenter
 
             MouseArea {

@@ -1,9 +1,9 @@
 import QtQuick
 
 Text {
-    text: "  │  "
+    text: Theme.separatorText
     color: Theme.border
-    font.family: "JetBrains Mono"
-    font.pixelSize: 13
+    font.family: Theme.barFontFamily
+    font.pixelSize: Theme.barFontSize
     verticalAlignment: Text.AlignVCenter
 }
