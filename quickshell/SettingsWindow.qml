@@ -266,8 +266,10 @@ FloatingWindow {
             pendingWallpaper = filename
         } else {
             pendingWallpaper = ""
+            const types = ["fade", "left", "right", "top", "bottom", "wipe", "wave", "grow", "center", "any", "outer"]
+            const type = types[Math.floor(Math.random() * types.length)]
             const cmd = ["awww", "img",
-                "--transition-type", "center",
+                "--transition-type", type,
                 "--transition-duration", "1.5",
                 "--transition-fps", "60"]
             if (root.monitorName) cmd.push("--outputs", root.monitorName)
