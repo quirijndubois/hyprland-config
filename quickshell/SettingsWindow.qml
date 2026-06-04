@@ -81,7 +81,7 @@ FloatingWindow {
         }
         for (const a of appsList) {
             const s = root.fuzzyScore(searchQuery, a.name)
-            if (s > 0) results.push({ score: s, type: "app", label: a.name, exec: a.exec, icon: a.icon })
+            if (s > 0) results.push({ score: s, type: "app", label: a.name, exec: a.exec, icon: a.icon, terminal: a.terminal })
         }
         for (const d of bluetoothDevices) {
             const s = root.fuzzyScore(searchQuery, d.name)
@@ -170,10 +170,10 @@ FloatingWindow {
         stdout: StdioCollector {
             onStreamFinished: {
                 const lines = this.text.trim().split("\n").filter(l => l.length > 0)
-                root.appsList = lines.map(line => {
-                    const parts = line.split("\t")
-                    return { name: parts[0] || "", exec: parts[1] || "", icon: parts[2] || "" }
-                }).filter(a => a.name && a.exec)
+                    root.appsList = lines.map(line => {
+                        const parts = line.split("\t")
+                        return { name: parts[0] || "", exec: parts[1] || "", icon: parts[2] || "", terminal: parts[3] === "true" }
+                    }).filter(a => a.name && a.exec)
             }
         }
     }
@@ -303,8 +303,13 @@ FloatingWindow {
         }
     }
 
-    function launchApp(exec) {
-        Quickshell.execDetached(["sh", "-c", root.cleanExec(exec)])
+    function launchApp(exec, terminal) {
+        const cmd = root.cleanExec(exec)
+        if (terminal) {
+            Quickshell.execDetached(["sh", "-c", "kitty -e " + cmd])
+        } else {
+            Quickshell.execDetached(["sh", "-c", cmd])
+        }
     }
 
     function saveMainItems() {
@@ -461,7 +466,7 @@ FloatingWindow {
                 Theme.name = root.paletteOptions[root.selectedIndex].id
             } else if (root.page === "apps") {
                 const app = root.appsList[root.selectedIndex]
-                if (app) { root.launchApp(app.exec); root.closeRequested() }
+                if (app) { root.launchApp(app.exec, app.terminal); root.closeRequested() }
             } else if (root.page === "bluetooth") {
                 const dev = root.bluetoothDevices[root.selectedIndex]
                 if (dev) root.toggleBluetooth(dev)
@@ -479,7 +484,7 @@ FloatingWindow {
             if (!result) return
             if (result.type === "wallpaper") root.applyWallpaper(result.file)
             else if (result.type === "palette") Theme.name = result.id
-            else if (result.type === "app") { root.launchApp(result.exec); root.closeRequested() }
+            else if (result.type === "app") { root.launchApp(result.exec, result.terminal); root.closeRequested() }
             else if (result.type === "bluetooth") { root.toggleBluetooth(result); return }
             else if (result.type === "design") { Theme.design = result.id }
             else if (result.type === "layout") { root.applyLayout(result.id) }

@@ -27,7 +27,7 @@ for path in dirs:
         continue
     if not d.get('Name') or not d.get('Exec'):
         continue
-    result.append(d['Name'] + '\t' + d['Exec'] + '\t' + d.get('Icon', ''))
+    result.append(d['Name'] + '\t' + d['Exec'] + '\t' + d.get('Icon', '') + '\t' + d.get('Terminal', 'false'))
 
 result.sort(key=lambda x: x.lower())
 sys.stdout.write('\n'.join(result) + '\n')
