@@ -41,14 +41,16 @@ FloatingWindow {
         selectedSearchIndex = 0
     }
 
-    function fuzzyMatch(query, str) {
+    function fuzzyScore(query, str) {
         query = query.toLowerCase()
         str = str.toLowerCase()
+        if (str === query) return 100
+        if (str.startsWith(query)) return 50
         let qi = 0
         for (let i = 0; i < str.length && qi < query.length; i++) {
             if (str[i] === query[qi]) qi++
         }
-        return qi === query.length
+        return qi === query.length ? 10 : 0
     }
 
     function cleanExec(exec) {
@@ -63,38 +65,38 @@ FloatingWindow {
 
     property var searchResults: {
         if (!searchQuery) return []
-        const top = []
-        const rest = []
+        const results = []
         for (const m of mainItems) {
-            if (root.fuzzyMatch(searchQuery, m.label) || root.fuzzyMatch(searchQuery, m.id))
-                top.push({ type: "menu", label: m.label, id: m.id })
+            const s = Math.max(root.fuzzyScore(searchQuery, m.label), root.fuzzyScore(searchQuery, m.id))
+            if (s > 0) results.push({ score: s, type: "menu", label: m.label, id: m.id })
         }
         for (const f of wallpaperFiles) {
             const name = f.replace(/\.[^.]+$/, "")
-            if (root.fuzzyMatch(searchQuery, name))
-                rest.push({ type: "wallpaper", label: name, file: f })
+            const s = root.fuzzyScore(searchQuery, name)
+            if (s > 0) results.push({ score: s, type: "wallpaper", label: name, file: f })
         }
         for (const p of paletteOptions) {
-            if (root.fuzzyMatch(searchQuery, p.label) || root.fuzzyMatch(searchQuery, p.id))
-                rest.push({ type: "palette", label: p.label, id: p.id, swatches: p.swatches })
+            const s = Math.max(root.fuzzyScore(searchQuery, p.label), root.fuzzyScore(searchQuery, p.id))
+            if (s > 0) results.push({ score: s, type: "palette", label: p.label, id: p.id, swatches: p.swatches })
         }
         for (const a of appsList) {
-            if (root.fuzzyMatch(searchQuery, a.name))
-                rest.push({ type: "app", label: a.name, exec: a.exec, icon: a.icon })
+            const s = root.fuzzyScore(searchQuery, a.name)
+            if (s > 0) results.push({ score: s, type: "app", label: a.name, exec: a.exec, icon: a.icon })
         }
         for (const d of bluetoothDevices) {
-            if (root.fuzzyMatch(searchQuery, d.name))
-                rest.push({ type: "bluetooth", label: d.name, mac: d.mac, connected: d.connected, paired: d.paired })
+            const s = root.fuzzyScore(searchQuery, d.name)
+            if (s > 0) results.push({ score: s, type: "bluetooth", label: d.name, mac: d.mac, connected: d.connected, paired: d.paired })
         }
         for (const d of designOptions) {
-            if (root.fuzzyMatch(searchQuery, d.label) || root.fuzzyMatch(searchQuery, d.desc))
-                rest.push({ type: "design", label: d.label, id: d.id, desc: d.desc, bars: d.bars, barH: d.barH })
+            const s = Math.max(root.fuzzyScore(searchQuery, d.label), root.fuzzyScore(searchQuery, d.desc))
+            if (s > 0) results.push({ score: s, type: "design", label: d.label, id: d.id, desc: d.desc, bars: d.bars, barH: d.barH })
         }
         for (const l of layoutOptions) {
-            if (root.fuzzyMatch(searchQuery, l.label) || root.fuzzyMatch(searchQuery, l.desc))
-                rest.push({ type: "layout", label: l.label, id: l.id, desc: l.desc })
+            const s = Math.max(root.fuzzyScore(searchQuery, l.label), root.fuzzyScore(searchQuery, l.desc))
+            if (s > 0) results.push({ score: s, type: "layout", label: l.label, id: l.id, desc: l.desc })
         }
-        return top.concat(rest)
+        results.sort((a, b) => b.score - a.score)
+        return results
     }
 
     readonly property var paletteOptions: [
