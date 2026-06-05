@@ -57,6 +57,7 @@ FloatingWindow {
         if (page !== "main") activeSubPage = page
         if (page === "bluetooth") btListProc.running = true
         if (page === "layout") layoutQueryProc.running = true
+        if (page === "clipboard") clipListProc.running = true
     }
 
     onSearchQueryChanged: {
@@ -126,6 +127,10 @@ FloatingWindow {
         for (const l of layoutOptions) {
             const s = Math.max(root.fuzzyScore(searchQuery, l.label), root.fuzzyScore(searchQuery, l.desc))
             if (s > 0) results.push({ score: s, type: "layout", label: l.label, id: l.id, desc: l.desc })
+        }
+        for (const c of clipboardItems) {
+            const s = root.fuzzyScore(searchQuery, c.preview)
+            if (s > 0) results.push({ score: s, type: "clipboard", label: c.preview, line: c.line })
         }
         results.sort((a, b) => b.score - a.score)
         if (results.length === 0 && !mathResult) results.push({ type: "web", label: searchQuery })
@@ -200,6 +205,7 @@ FloatingWindow {
         { id: "layout",        label: "layout" },
         { id: "apps",          label: "applications" },
         { id: "bluetooth",     label: "bluetooth" },
+        { id: "clipboard",     label: "clipboard" },
         { id: "bar",           label: "bar" },
     ]
 
@@ -310,6 +316,43 @@ FloatingWindow {
 
     Process { id: saveItemsProc }
     Process { id: clipProc; stdout: StdioCollector {} }
+
+    property var clipboardItems: []
+
+    Process {
+        id: clipListProc
+        command: ["cliphist", "list"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const lines = this.text.trim().split("\n").filter(l => l.length > 0)
+                root.clipboardItems = lines.map(l => {
+                    const tab = l.indexOf("\t")
+                    return tab === -1
+                        ? { id: l, preview: l, line: l }
+                        : { id: l.substring(0, tab), preview: l.substring(tab + 1), line: l }
+                })
+            }
+        }
+    }
+
+    Process {
+        id: clipDecodeProc
+        stdout: StdioCollector {}
+        stderr: StdioCollector {}
+    }
+
+    Timer {
+        interval: 3000
+        repeat: true
+        running: root.page === "clipboard"
+        onTriggered: if (!clipListProc.running) clipListProc.running = true
+    }
+
+    function copyClipboardItem(line) {
+        clipDecodeProc.command = ["sh", "-c", "printf '%s\\n' \"$1\" | cliphist decode | wl-copy", "--", line]
+        clipDecodeProc.running = false
+        clipDecodeProc.running = true
+    }
 
     Process {
         id: homeDirProc
@@ -490,6 +533,8 @@ FloatingWindow {
                         layoutList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "bar")
                         barListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "clipboard")
+                        clipListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 }
                 event.accepted = true
                 return
@@ -504,6 +549,7 @@ FloatingWindow {
                              : root.page === "design"       ? root.designOptions.length - 1
                              : root.page === "layout"       ? root.layoutOptions.length - 1
                              : root.page === "bar"          ? Math.max(0, root.barModules.length - 1)
+                             : root.page === "clipboard"    ? Math.max(0, root.clipboardItems.length - 1)
                              : root.paletteOptions.length - 1
                 if (shift && root.page === "main" && root.selectedIndex < maxIdx) {
                     const items = Array.from(root.mainItems)
@@ -534,6 +580,8 @@ FloatingWindow {
                         layoutList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "bar")
                         barListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "clipboard")
+                        clipListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 }
                 event.accepted = true
                 return
@@ -575,6 +623,9 @@ FloatingWindow {
             } else if (root.page === "bar") {
                 const mod = root.barModules[root.selectedIndex]
                 if (mod) root.toggleBarModule(mod.id)
+            } else if (root.page === "clipboard") {
+                const item = root.clipboardItems[root.selectedIndex]
+                if (item) { root.copyClipboardItem(item.line); root.closeRequested() }
             }
         }
 
@@ -609,6 +660,7 @@ FloatingWindow {
             else if (result.type === "design") { Theme.design = result.id }
             else if (result.type === "layout") { root.applyLayout(result.id) }
             else if (result.type === "menu") { root.page = result.id; root.selectedIndex = 0 }
+            else if (result.type === "clipboard") { root.copyClipboardItem(result.line); root.closeRequested(); return }
             root.searchQuery = ""
         }
 
@@ -1453,6 +1505,113 @@ FloatingWindow {
                     }
                 }
             }
+
+            // ── Clipboard ──────────────────────────────────────
+            Item {
+                anchors.fill: parent
+                visible: root.activeSubPage === "clipboard"
+
+                Rectangle {
+                    id: clipHeader
+                    width: parent.width
+                    height: 44
+                    color: Theme.surface
+
+                    Row {
+                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                        spacing: 14
+
+                        Text {
+                            text: "< back"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 12
+                            verticalAlignment: Text.AlignVCenter
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
+                            }
+                        }
+
+                        Text {
+                            text: "clipboard"
+                            color: Theme.purple
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 14
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
+                    Text {
+                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                        text: root.clipboardItems.length + " entries"
+                        color: Theme.subtext
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: 11
+                    }
+                }
+
+                Rectangle { id: clipDivider; anchors.top: clipHeader.bottom; width: parent.width; height: 1; color: Theme.border }
+
+                Text {
+                    anchors.centerIn: parent
+                    visible: root.clipboardItems.length === 0
+                    text: "no history  —  run: wl-paste --watch cliphist store"
+                    color: Theme.subtext
+                    font.family: "JetBrains Mono"
+                    font.pixelSize: 11
+                }
+
+                ListView {
+                    id: clipListView
+                    anchors { left: parent.left; right: parent.right; top: clipDivider.bottom; bottom: parent.bottom }
+                    model: root.clipboardItems
+                    clip: true
+                    visible: root.clipboardItems.length > 0
+
+                    delegate: Rectangle {
+                        required property var modelData
+                        required property int index
+
+                        width: clipListView.width
+                        height: 44
+                        color: root.selectedIndex === index ? Theme.border : "transparent"
+
+                        Row {
+                            anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                            spacing: 14
+
+                            Text {
+                                text: root.selectedIndex === index ? ">" : " "
+                                color: Theme.blue
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 13
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            Text {
+                                text: modelData.preview
+                                color: root.selectedIndex === index ? Theme.text : Theme.subtext
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 13
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
+                                width: clipListView.width - 80
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: root.selectedIndex = index
+                            onClicked: { root.copyClipboardItem(modelData.line); root.closeRequested() }
+                        }
+                    }
+                }
+            }
         }
 
         // ── Bar ────────────────────────────────────────────────
@@ -1667,7 +1826,8 @@ FloatingWindow {
                                     : modelData.type === "menu" ? "open menu"
                                     : modelData.type === "file" ? (modelData.isDir ? "directory" : "file")
                                     : modelData.type === "math" ? modelData.expr
-                                    : modelData.type === "web"  ? "search the web"
+                                    : modelData.type === "web"       ? "search the web"
+                                    : modelData.type === "clipboard" ? "clipboard"
                                     : modelData.type
                                 color: modelData.type === "wallpaper"  ? Theme.teal
                                      : modelData.type === "palette"    ? Theme.yellow
@@ -1678,6 +1838,7 @@ FloatingWindow {
                                      : modelData.type === "file"       ? (modelData.isDir ? Theme.blue : Theme.subtext)
                                      : modelData.type === "math"       ? Theme.subtext
                                      : modelData.type === "web"        ? Theme.yellow
+                                     : modelData.type === "clipboard"  ? Theme.teal
                                      : Theme.blue
                                 font.family: "JetBrains Mono"
                                 font.pixelSize: 10
