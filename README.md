@@ -8,8 +8,9 @@ A personal [Hyprland](https://hyprland.org) desktop setup with a custom [Quicksh
 
 - **Quickshell bar** - modular panel with workspaces, system stats (CPU, memory, battery), clock, audio, network, Bluetooth, and system tray
 - **Settings overlay** - press `Alt+S` to open a floating settings window with fuzzy search across wallpapers, color palettes, bar designs, layouts, and apps. Reorder the main menu with `Shift+Up`/`Shift+Down` (persisted across restarts)
+- **Fuzzy search extras** - type a `/` path to browse the filesystem, type a math expression (`5 * (3 + 2)`, `^` for exponent) to evaluate it and copy the result, or search with no matches to open the query in DuckDuckGo
 - **12 color palettes** - Catppuccin, Tokyo Night, Gruvbox, Nord, Dracula, Rose Pine, One Dark, Everforest, Solarized, and more - switch on the fly
-- **7 bar designs** - default, compact, islands (floating pills), bold, minimal, clean (sans-serif), and hacker
+- **8 bar designs** - default, compact, islands (floating pills), **pills** (per-module pill chips on a transparent bar), bold, minimal, clean (sans-serif), and hacker
 - **4 Hyprland layouts** - dwindle, master, spiral, and split - toggleable from settings
 - **Wallpaper manager** - browse and apply wallpapers with smooth `awww` transitions, per-monitor support
 - **App launcher** - browse and launch apps from the settings overlay
@@ -60,3 +61,4 @@ This syncs configs for `hypr`, `dunst`, `kitty`, and `quickshell` to `~/.config/
 - [hyprlock](https://github.com/hyprwm/hyprlock) / [hypridle](https://github.com/hyprwm/hypridle) (lockscreen + idle)
 - [hyprshot](https://github.com/Gustash/hyprshot) (screenshots)
 - [hyprpicker](https://github.com/hyprwm/hyprpicker) (color picker)
+- [wl-clipboard](https://github.com/bugaevc/wl-clipboard) (copy math results to clipboard)

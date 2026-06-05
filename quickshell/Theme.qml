@@ -13,6 +13,17 @@ Singleton {
     property string barFontFamily: "JetBrains Mono"
     property bool   barFontBold:   false
     property string separatorText: "  │  "
+    property bool showClock:      true
+    property bool showBattery:    true
+    property bool showCpu:        true
+    property bool showMemory:     true
+    property bool showAudio:      true
+    property bool showBluetooth:  true
+    property bool showNetwork:    true
+    property bool showTray:       true
+    property bool showWorkspaces: true
+    property bool showMenu:       true
+    property bool showGpu:        true
 
     property color base:    "#1e1e2e"
     property color surface: "#181825"
@@ -116,6 +127,10 @@ Singleton {
             barHeight = 32; barFontSize = 12
             barFontFamily = "Hack"; barFontBold = false
             separatorText = "  |  "
+        } else if (d === "pills") {
+            barHeight = 32; barFontSize = 13
+            barFontFamily = "JetBrains Mono"; barFontBold = false
+            separatorText = "  │  "
         } else {
             // default
             barHeight = 30; barFontSize = 13
@@ -140,8 +155,36 @@ Singleton {
         saveDesignProc.running = true
     }
 
+    function saveBarModules() {
+        const data = JSON.stringify({
+            showClock: root.showClock, showBattery: root.showBattery,
+            showCpu: root.showCpu, showMemory: root.showMemory,
+            showAudio: root.showAudio, showBluetooth: root.showBluetooth,
+            showNetwork: root.showNetwork, showTray: root.showTray,
+            showWorkspaces: root.showWorkspaces, showMenu: root.showMenu,
+            showGpu: root.showGpu
+        })
+        const escaped = data.replace(/'/g, "'\\''")
+        barModulesSaveProc.command = ["sh", "-c", "printf '%s' '" + escaped + "' > $HOME/.config/quickshell/bar-modules"]
+        barModulesSaveProc.running = false
+        barModulesSaveProc.running = true
+    }
+
+    onShowClockChanged: saveBarModules()
+    onShowBatteryChanged: saveBarModules()
+    onShowCpuChanged: saveBarModules()
+    onShowMemoryChanged: saveBarModules()
+    onShowAudioChanged: saveBarModules()
+    onShowBluetoothChanged: saveBarModules()
+    onShowNetworkChanged: saveBarModules()
+    onShowTrayChanged: saveBarModules()
+    onShowWorkspacesChanged: saveBarModules()
+    onShowMenuChanged: saveBarModules()
+    onShowGpuChanged: saveBarModules()
+
     Process { id: saveProc }
     Process { id: saveDesignProc }
+    Process { id: barModulesSaveProc }
 
     Process {
         id: loadProc
@@ -163,6 +206,33 @@ Singleton {
             onStreamFinished: {
                 const saved = this.text.trim()
                 if (saved) root.design = saved
+            }
+        }
+    }
+
+    Process {
+        id: loadBarModulesProc
+        command: ["sh", "-c", "cat $HOME/.config/quickshell/bar-modules 2>/dev/null"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const saved = this.text.trim()
+                if (saved) {
+                    try {
+                        const obj = JSON.parse(saved)
+                        if (obj.showClock !== undefined) root.showClock = obj.showClock
+                        if (obj.showBattery !== undefined) root.showBattery = obj.showBattery
+                        if (obj.showCpu !== undefined) root.showCpu = obj.showCpu
+                        if (obj.showMemory !== undefined) root.showMemory = obj.showMemory
+                        if (obj.showAudio !== undefined) root.showAudio = obj.showAudio
+                        if (obj.showBluetooth !== undefined) root.showBluetooth = obj.showBluetooth
+                        if (obj.showNetwork !== undefined) root.showNetwork = obj.showNetwork
+                        if (obj.showTray !== undefined) root.showTray = obj.showTray
+                        if (obj.showWorkspaces !== undefined) root.showWorkspaces = obj.showWorkspaces
+                        if (obj.showMenu !== undefined) root.showMenu = obj.showMenu
+                        if (obj.showGpu !== undefined) root.showGpu = obj.showGpu
+                    } catch(e) {}
+                }
             }
         }
     }

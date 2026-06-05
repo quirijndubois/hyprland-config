@@ -25,6 +25,28 @@ FloatingWindow {
     property string searchQuery: ""
     property int selectedSearchIndex: 0
     property var wallpaperFiles: []
+    property string homeDir: ""
+    property bool isPathMode: searchQuery.length > 0 && (searchQuery[0] === "/" || searchQuery.startsWith("~/"))
+    property string pathExpanded: (searchQuery.startsWith("~/") && homeDir) ? homeDir + searchQuery.substring(1) : searchQuery
+    property string pathDir: {
+        if (!isPathMode) return ""
+        const i = pathExpanded.lastIndexOf("/")
+        return pathExpanded.substring(0, i + 1)
+    }
+    property string pathFilter: {
+        if (!isPathMode) return ""
+        const i = pathExpanded.lastIndexOf("/")
+        return pathExpanded.substring(i + 1).toLowerCase()
+    }
+    property var fileEntries: []
+    onPathDirChanged: {
+        root.fileEntries = []
+        if (root.pathDir) {
+            lsProc.command = ["ls", "-1p", "--color=never", "--", root.pathDir]
+            lsProc.running = false
+            lsProc.running = true
+        }
+    }
     property var appsList: []
     property var bluetoothDevices: []
     property string currentLayout: "dwindle"
@@ -65,6 +87,16 @@ FloatingWindow {
 
     property var searchResults: {
         if (!searchQuery) return []
+        if (isPathMode) {
+            const entries = fileEntries
+            const f = pathFilter
+            if (!f) return entries.map(e => ({ type: "file", label: e.name + (e.isDir ? "/" : ""), name: e.name, isDir: e.isDir, path: e.path }))
+            return entries
+                .filter(e => e.name.toLowerCase().includes(f))
+                .map(e => ({ type: "file", label: e.name + (e.isDir ? "/" : ""), name: e.name, isDir: e.isDir, path: e.path,
+                              score: e.name.toLowerCase().startsWith(f) ? 50 : 10 }))
+                .sort((a, b) => (b.score || 0) - (a.score || 0))
+        }
         const results = []
         for (const m of mainItems) {
             const s = Math.max(root.fuzzyScore(searchQuery, m.label), root.fuzzyScore(searchQuery, m.id))
@@ -96,7 +128,22 @@ FloatingWindow {
             if (s > 0) results.push({ score: s, type: "layout", label: l.label, id: l.id, desc: l.desc })
         }
         results.sort((a, b) => b.score - a.score)
+        if (results.length === 0 && !mathResult) results.push({ type: "web", label: searchQuery })
+        if (mathResult) results.unshift({ type: "math", label: mathResult.result, expr: mathResult.expr })
         return results
+    }
+
+    property var mathResult: {
+        const q = searchQuery.trim()
+        if (!q || isPathMode) return null
+        if (!/^[\d\s\+\-\*\/\%\.\(\)\^]+$/.test(q)) return null
+        if (!/[\+\-\*\/\%\^]/.test(q)) return null
+        try {
+            const val = eval(q.replace(/\^/g, "**"))
+            if (typeof val !== "number" || !isFinite(val)) return null
+            const formatted = Number.isInteger(val) ? String(val) : parseFloat(val.toPrecision(10)).toString()
+            return { expr: q, result: formatted }
+        } catch(e) { return null }
     }
 
     readonly property var paletteOptions: [
@@ -118,6 +165,7 @@ FloatingWindow {
         { id: "default",  label: "default",  desc: "JetBrains Mono · flat",          bars: 1, barH: 6  },
         { id: "compact",  label: "compact",  desc: "JetBrains Mono · slim",          bars: 1, barH: 3  },
         { id: "islands",  label: "islands",  desc: "JetBrains Mono · floating",      bars: 3, barH: 14 },
+        { id: "pills",    label: "pills",    desc: "JetBrains Mono · per-module pills", bars: 5, barH: 14 },
         { id: "bold",     label: "bold",     desc: "JetBrains Mono bold · tall",     bars: 1, barH: 10 },
         { id: "minimal",  label: "minimal",  desc: "JetBrains Mono · ultra-thin",    bars: 1, barH: 2  },
         { id: "clean",    label: "clean",    desc: "Noto Sans · sans-serif",         bars: 1, barH: 6  },
@@ -131,6 +179,20 @@ FloatingWindow {
         { id: "monocle",   label: "monocle",   desc: "fullscreen stack" },
     ]
 
+    readonly property var barModules: [
+        { id: "showClock",     label: "clock" },
+        { id: "showBattery",   label: "battery" },
+        { id: "showCpu",       label: "cpu" },
+        { id: "showMemory",    label: "memory" },
+        { id: "showAudio",     label: "audio" },
+        { id: "showBluetooth", label: "bluetooth" },
+        { id: "showNetwork",   label: "network" },
+        { id: "showWorkspaces", label: "workspaces" },
+        { id: "showTray",      label: "tray" },
+        { id: "showMenu",      label: "menu button" },
+        { id: "showGpu",       label: "gpu" },
+    ]
+
     property var mainItems: [
         { id: "wallpaper",     label: "wallpaper" },
         { id: "palette",       label: "palette" },
@@ -138,6 +200,7 @@ FloatingWindow {
         { id: "layout",        label: "layout" },
         { id: "apps",          label: "applications" },
         { id: "bluetooth",     label: "bluetooth" },
+        { id: "bar",           label: "bar" },
     ]
 
     onVisibleChanged: {
@@ -246,6 +309,30 @@ FloatingWindow {
     }
 
     Process { id: saveItemsProc }
+    Process { id: clipProc; stdout: StdioCollector {} }
+
+    Process {
+        id: homeDirProc
+        command: ["sh", "-c", "printf '%s' \"$HOME\""]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: root.homeDir = this.text.trim()
+        }
+    }
+
+    Process {
+        id: lsProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const lines = this.text.split("\n").filter(l => l.length > 0)
+                root.fileEntries = lines.map(l => {
+                    const isDir = l.endsWith("/")
+                    const name = isDir ? l.slice(0, -1) : l
+                    return { name: name, isDir: isDir, path: root.pathDir + name }
+                })
+            }
+        }
+    }
 
     Process {
         id: loadItemsProc
@@ -317,6 +404,10 @@ FloatingWindow {
         saveItemsProc.command = ["sh", "-c", "printf '%s' '" + ids + "' > $HOME/.config/quickshell/main-items"]
         saveItemsProc.running = false
         saveItemsProc.running = true
+    }
+
+    function toggleBarModule(id) {
+        Theme[id] = !Theme[id]
     }
 
     Connections {
@@ -397,6 +488,8 @@ FloatingWindow {
                         designList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "layout")
                         layoutList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "bar")
+                        barListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 }
                 event.accepted = true
                 return
@@ -410,6 +503,7 @@ FloatingWindow {
                              : root.page === "bluetooth"    ? Math.max(0, root.bluetoothDevices.length - 1)
                              : root.page === "design"       ? root.designOptions.length - 1
                              : root.page === "layout"       ? root.layoutOptions.length - 1
+                             : root.page === "bar"          ? Math.max(0, root.barModules.length - 1)
                              : root.paletteOptions.length - 1
                 if (shift && root.page === "main" && root.selectedIndex < maxIdx) {
                     const items = Array.from(root.mainItems)
@@ -438,6 +532,8 @@ FloatingWindow {
                         designList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "layout")
                         layoutList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "bar")
+                        barListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 }
                 event.accepted = true
                 return
@@ -473,15 +569,39 @@ FloatingWindow {
             } else if (root.page === "design") {
                 const d = root.designOptions[root.selectedIndex]
                 if (d) Theme.design = d.id
-            } else if (root.page === "layout") {
+            }             else if (root.page === "layout") {
                 const l = root.layoutOptions[root.selectedIndex]
                 if (l) root.applyLayout(l.id)
+            } else if (root.page === "bar") {
+                const mod = root.barModules[root.selectedIndex]
+                if (mod) root.toggleBarModule(mod.id)
             }
         }
 
         function activateSearchItem() {
             const result = root.searchResults[root.selectedSearchIndex]
             if (!result) return
+            if (result.type === "web") {
+                Quickshell.execDetached(["xdg-open", "https://duckduckgo.com/?q=" + encodeURIComponent(root.searchQuery)])
+                root.closeRequested()
+                return
+            }
+            if (result.type === "math") {
+                clipProc.command = ["sh", "-c", "printf '%s' '" + result.label + "' | wl-copy"]
+                clipProc.running = false
+                clipProc.running = true
+                root.searchQuery = ""
+                return
+            }
+            if (result.type === "file") {
+                if (result.isDir) {
+                    root.searchQuery = result.path + "/"
+                } else {
+                    Quickshell.execDetached(["xdg-open", result.path])
+                    root.closeRequested()
+                }
+                return
+            }
             if (result.type === "wallpaper") root.applyWallpaper(result.file)
             else if (result.type === "palette") Theme.name = result.id
             else if (result.type === "app") { root.launchApp(result.exec, result.terminal); root.closeRequested() }
@@ -1023,9 +1143,9 @@ FloatingWindow {
                             Repeater {
                                 model: modelData.bars
                                 Rectangle {
-                                    width: modelData.bars === 1 ? 60 : 18
+                                    width: modelData.bars === 1 ? 60 : modelData.bars === 5 ? 10 : 18
                                     height: modelData.barH
-                                    radius: modelData.bars === 3 ? 4 : 2
+                                    radius: modelData.bars === 3 ? 4 : modelData.bars === 5 ? modelData.barH / 2 : 2
                                     color: root.selectedIndex === index ? Theme.blue : Theme.subtext
                                     opacity: root.selectedIndex === index ? 0.7 : 0.35
                                 }
@@ -1335,6 +1455,110 @@ FloatingWindow {
             }
         }
 
+        // ── Bar ────────────────────────────────────────────────
+        Item {
+            anchors.fill: parent
+            visible: root.activeSubPage === "bar"
+
+            Rectangle {
+                id: barHeader
+                width: parent.width
+                height: 44
+                color: Theme.surface
+
+                Row {
+                    anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                    spacing: 14
+
+                    Text {
+                        text: "< back"
+                        color: Theme.subtext
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: 12
+                        verticalAlignment: Text.AlignVCenter
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: { root.page = "main"; root.selectedIndex = 0 }
+                        }
+                    }
+
+                    Text {
+                        text: "bar modules"
+                        color: Theme.purple
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: 14
+                        font.bold: true
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+
+                Text {
+                    anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                    text: root.barModules.length + " modules"
+                    color: Theme.subtext
+                    font.family: "JetBrains Mono"
+                    font.pixelSize: 11
+                }
+            }
+
+            Rectangle { id: barDivider; anchors.top: barHeader.bottom; width: parent.width; height: 1; color: Theme.border }
+
+            ListView {
+                id: barListView
+                anchors { left: parent.left; right: parent.right; top: barDivider.bottom; bottom: parent.bottom }
+                model: root.barModules
+                clip: true
+                interactive: false
+
+                delegate: Rectangle {
+                    required property var modelData
+                    required property int index
+
+                    width: barListView.width
+                    height: 44
+                    color: root.selectedIndex === index ? Theme.border : "transparent"
+
+                    Row {
+                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                        spacing: 14
+
+                        Text {
+                            text: root.selectedIndex === index ? ">" : " "
+                            color: Theme.blue
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 13
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Text {
+                            text: modelData.label
+                            color: root.selectedIndex === index ? Theme.text : Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 13
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
+                    Text {
+                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                        text: Theme[modelData.id] ? "[*]" : "[ ]"
+                        color: Theme[modelData.id] ? Theme.green : Theme.subtext
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: 13
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        hoverEnabled: true
+                        onEntered: root.selectedIndex = index
+                        onClicked: root.toggleBarModule(modelData.id)
+                    }
+                }
+            }
+        }
+
         // ── Fuzzy search overlay ───────────────────────────────
         Item {
             anchors.fill: parent
@@ -1409,7 +1633,8 @@ FloatingWindow {
                     required property int index
 
                     width: searchList.width
-                    height: (modelData.type === "wallpaper" || modelData.type === "app" || modelData.type === "bluetooth" || modelData.type === "layout") ? 56 : 44
+                    height: modelData.type === "math" ? 52
+                          : (modelData.type === "wallpaper" || modelData.type === "app" || modelData.type === "bluetooth" || modelData.type === "layout") ? 56 : 44
                     color: root.selectedSearchIndex === index ? Theme.border : "transparent"
 
                     Row {
@@ -1430,14 +1655,19 @@ FloatingWindow {
 
                             Text {
                                 text: modelData.label
-                                color: root.selectedSearchIndex === index ? Theme.text : Theme.subtext
+                                color: modelData.type === "math" ? Theme.green
+                                     : root.selectedSearchIndex === index ? Theme.text : Theme.subtext
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 13
+                                font.pixelSize: modelData.type === "math" ? 16 : 13
+                                font.bold: modelData.type === "math"
                             }
 
                             Text {
                                 text: (modelData.type === "design" || modelData.type === "layout") ? modelData.desc
                                     : modelData.type === "menu" ? "open menu"
+                                    : modelData.type === "file" ? (modelData.isDir ? "directory" : "file")
+                                    : modelData.type === "math" ? modelData.expr
+                                    : modelData.type === "web"  ? "search the web"
                                     : modelData.type
                                 color: modelData.type === "wallpaper"  ? Theme.teal
                                      : modelData.type === "palette"    ? Theme.yellow
@@ -1445,6 +1675,9 @@ FloatingWindow {
                                      : modelData.type === "design"     ? Theme.purple
                                      : modelData.type === "layout"     ? Theme.teal
                                      : modelData.type === "menu"       ? Theme.purple
+                                     : modelData.type === "file"       ? (modelData.isDir ? Theme.blue : Theme.subtext)
+                                     : modelData.type === "math"       ? Theme.subtext
+                                     : modelData.type === "web"        ? Theme.yellow
                                      : Theme.blue
                                 font.family: "JetBrains Mono"
                                 font.pixelSize: 10
@@ -1567,14 +1800,34 @@ FloatingWindow {
                         }
                     }
 
-                    // Menu arrow
+                    // Menu / directory arrow
                     Text {
                         anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-                        visible: modelData.type === "menu"
+                        visible: modelData.type === "menu" || (modelData.type === "file" && modelData.isDir)
                         text: ">"
                         color: Theme.subtext
                         font.family: "JetBrains Mono"
                         font.pixelSize: 12
+                    }
+
+                    // Math copy hint
+                    Text {
+                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                        visible: modelData.type === "math"
+                        text: "copy"
+                        color: Theme.subtext
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: 10
+                    }
+
+                    // Web open hint
+                    Text {
+                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                        visible: modelData.type === "web"
+                        text: "open"
+                        color: Theme.yellow
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: 10
                     }
 
                     // Design bar preview
@@ -1603,6 +1856,22 @@ FloatingWindow {
                             Rectangle { width: 13; height: designPrev.res.barH || 0; radius: 3; color: Theme.subtext; opacity: 0.45 }
                             Rectangle { width: 13; height: designPrev.res.barH || 0; radius: 3; color: Theme.subtext; opacity: 0.45 }
                             Rectangle { width: 13; height: designPrev.res.barH || 0; radius: 3; color: Theme.subtext; opacity: 0.45 }
+                        }
+
+                        // Pills design (5 small circles)
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 2
+                            visible: designPrev.res.type === "design" && designPrev.res.bars === 5
+                            Repeater {
+                                model: 5
+                                Rectangle {
+                                    width: 10
+                                    height: designPrev.res.barH || 0
+                                    radius: (designPrev.res.barH || 0) / 2
+                                    color: Theme.subtext; opacity: 0.45
+                                }
+                            }
                         }
                     }
 

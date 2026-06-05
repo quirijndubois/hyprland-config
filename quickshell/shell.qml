@@ -53,11 +53,11 @@ ShellRoot {
 
                 Rectangle {
                     anchors.fill: parent
-                    color: Theme.design === "islands" ? "transparent" : Theme.base
+                    color: (Theme.design === "islands" || Theme.design === "pills") ? "transparent" : Theme.base
 
-                    // Bottom border — hidden in islands mode
+                    // Bottom border — hidden in islands/pills mode
                     Rectangle {
-                        visible: Theme.design !== "islands"
+                        visible: Theme.design !== "islands" && Theme.design !== "pills"
                         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                         height: 1
                         color: Theme.border
@@ -80,12 +80,13 @@ ShellRoot {
                         anchors {
                             left: parent.left
                             verticalCenter: parent.verticalCenter
-                            leftMargin: Theme.design === "islands" ? 20 : 16
+                            leftMargin: Theme.design === "islands" ? 20 : Theme.design === "pills" ? 8 : 16
                         }
-                        spacing: 0
+                        spacing: Theme.design === "pills" ? 4 : 0
 
                         BarText {
                             text: "menu"
+                            visible: Theme.showMenu
                             color: root.settingsOpen ? Theme.purple : Theme.subtext
                             MouseArea {
                                 anchors.fill: parent
@@ -93,24 +94,26 @@ ShellRoot {
                                 onClicked: root.settingsOpen = !root.settingsOpen
                             }
                         }
-                        Separator {}
-                        ClockModule {}
-                        Separator {}
-                        BatteryModule {}
-                        Separator {}
-                        CpuModule {}
-                        Separator {}
-                        MemoryModule {}
+                        Separator { visible: Theme.showClock && Theme.design !== "pills" }
+                        ClockModule { visible: Theme.showClock }
+                        Separator { visible: Theme.showBattery && Theme.design !== "pills" }
+                        BatteryModule { visible: Theme.showBattery }
+                        Separator { visible: Theme.showCpu && Theme.design !== "pills" }
+                        CpuModule { visible: Theme.showCpu }
+                        Separator { visible: Theme.showMemory && Theme.design !== "pills" }
+                        MemoryModule { visible: Theme.showMemory }
+                        Separator { visible: Theme.showGpu && Theme.design !== "pills" }
+                        GpuModule { visible: Theme.showGpu }
                     }
 
-                    // ── Center island background ───────────────
+                    // ── Center island / pill background ───────────────
                     Rectangle {
-                        visible: Theme.design === "islands"
+                        visible: Theme.design === "islands" || Theme.design === "pills"
                         anchors { horizontalCenter: parent.horizontalCenter; verticalCenter: parent.verticalCenter }
                         width: centerRow.implicitWidth + 24
-                        height: parent.height - 8
+                        height: Theme.design === "pills" ? Theme.barHeight - 8 : parent.height - 8
                         color: Theme.surface
-                        radius: 8
+                        radius: Theme.design === "pills" ? (Theme.barHeight - 8) / 2 : 8
                         border.color: Theme.border
                         border.width: 1
                     }
@@ -123,7 +126,7 @@ ShellRoot {
                         }
                         spacing: 0
 
-                        WorkspacesModule { monitor: hyprMonitor }
+                        WorkspacesModule { monitor: hyprMonitor; visible: Theme.showWorkspaces }
                     }
 
                     // ── Right island background ────────────────
@@ -143,16 +146,16 @@ ShellRoot {
                         anchors {
                             right: parent.right
                             verticalCenter: parent.verticalCenter
-                            rightMargin: Theme.design === "islands" ? 20 : 16
+                            rightMargin: Theme.design === "islands" ? 20 : Theme.design === "pills" ? 8 : 16
                         }
-                        spacing: 0
+                        spacing: Theme.design === "pills" ? 4 : 0
 
-                        AudioModule {}
-                        Separator {}
-                        BluetoothModule {}
-                        Separator {}
-                        NetworkModule {}
-                        Separator { visible: trayMod.visible }
+                        AudioModule { visible: Theme.showAudio }
+                        Separator { visible: Theme.showBluetooth && Theme.design !== "pills" }
+                        BluetoothModule { visible: Theme.showBluetooth }
+                        Separator { visible: Theme.showNetwork && Theme.design !== "pills" }
+                        NetworkModule { visible: Theme.showNetwork }
+                        Separator { visible: trayMod.visible && Theme.design !== "pills" }
                         TrayModule { id: trayMod }
                     }
                 }
