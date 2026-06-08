@@ -25,6 +25,7 @@ Singleton {
     property bool showMenu:       true
     property bool showGpu:        true
     property bool showMusic:      true
+    property bool showInhibit:    true
     property int  gapsOut:        10
 
     property color base:    "#1e1e2e"
@@ -165,7 +166,8 @@ Singleton {
             showNetwork: root.showNetwork, showTray: root.showTray,
             showWorkspaces: root.showWorkspaces, showMenu: root.showMenu,
             showGpu: root.showGpu,
-            showMusic: root.showMusic
+            showMusic: root.showMusic,
+            showInhibit: root.showInhibit
         })
         const escaped = data.replace(/'/g, "'\\''")
         barModulesSaveProc.command = ["sh", "-c", "mkdir -p \"$HOME/.config/quickshell\" && printf '%s' '" + escaped + "' > $HOME/.config/quickshell/bar-modules"]
@@ -185,6 +187,7 @@ Singleton {
     onShowMenuChanged: saveBarModules()
     onShowGpuChanged: saveBarModules()
     onShowMusicChanged: saveBarModules()
+    onShowInhibitChanged: saveBarModules()
 
     Process { id: saveProc }
     Process { id: saveDesignProc }
@@ -236,6 +239,7 @@ Singleton {
                         if (obj.showMenu !== undefined) root.showMenu = obj.showMenu
                         if (obj.showGpu !== undefined) root.showGpu = obj.showGpu
                         if (obj.showMusic !== undefined) root.showMusic = obj.showMusic
+                        if (obj.showInhibit !== undefined) root.showInhibit = obj.showInhibit
                     } catch(e) {}
                 }
             }

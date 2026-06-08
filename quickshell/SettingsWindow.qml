@@ -80,6 +80,7 @@ FloatingWindow {
             sysMonitorsProc.running = true
             sysSensProc.running = false
             sysSensProc.running = true
+            if (root.systemSettingItems[root.selectedIndex]?.type === "section") root.selectedIndex++
         }
     }
 
@@ -219,7 +220,7 @@ FloatingWindow {
         { id: "showAudio",     label: "audio" },
         { id: "showBluetooth", label: "bluetooth" },
         { id: "showNetwork",   label: "network" },
-        { id: "inhibit",       label: "inhibit sleep" },
+        { id: "showInhibit",   label: "inhibit sleep" },
         { id: "showTray",      label: "tray" },
     ]
 
@@ -597,8 +598,7 @@ FloatingWindow {
     }
 
     function toggleBarModule(id) {
-        if (id === "inhibit") InhibitState.inhibited = !InhibitState.inhibited
-        else Theme[id] = !Theme[id]
+        Theme[id] = !Theme[id]
     }
 
     Connections {
@@ -618,15 +618,6 @@ FloatingWindow {
         clip: true
         focus: true
 
-        property real lastCursorX: -9999
-        property real lastCursorY: -9999
-
-        function hoverMoved(item, mx, my) {
-            const g = item.mapToItem(keyNav, mx, my)
-            if (g.x === lastCursorX && g.y === lastCursorY) return false
-            lastCursorX = g.x; lastCursorY = g.y
-            return true
-        }
 
         property real offset: root.page !== "main" ? 1.0 : 0.0
         Behavior on offset {
@@ -677,6 +668,8 @@ FloatingWindow {
                     mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 } else if (root.selectedIndex > 0) {
                     root.selectedIndex--
+                    if (root.page === "system" && root.systemSettingItems[root.selectedIndex]?.type === "section" && root.selectedIndex > 0)
+                        root.selectedIndex--
                     if (root.page === "main")
                         mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "wallpaper")
@@ -732,6 +725,8 @@ FloatingWindow {
                     mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 } else if (root.selectedIndex < maxIdx) {
                     root.selectedIndex++
+                    if (root.page === "system" && root.systemSettingItems[root.selectedIndex]?.type === "section" && root.selectedIndex < maxIdx)
+                        root.selectedIndex++
                     if (root.page === "main")
                         mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "wallpaper")
@@ -951,13 +946,6 @@ FloatingWindow {
                         font.pixelSize: 12
                     }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true
-                        onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
-                        onClicked: keyNav.activateItem()
-                    }
                 }
             }
         }
@@ -989,11 +977,6 @@ FloatingWindow {
                             font.family: "JetBrains Mono"
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
-                            }
                         }
 
                         Text {
@@ -1071,13 +1054,6 @@ FloatingWindow {
                             }
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
-                            onClicked: keyNav.activateItem()
-                        }
                     }
                 }
             }
@@ -1103,11 +1079,6 @@ FloatingWindow {
                             font.family: "JetBrains Mono"
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
-                            }
                         }
 
                         Text {
@@ -1182,13 +1153,6 @@ FloatingWindow {
                             font.pixelSize: 13
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
-                            onClicked: keyNav.activateItem()
-                        }
                     }
                 }
             }
@@ -1214,11 +1178,6 @@ FloatingWindow {
                             font.family: "JetBrains Mono"
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
-                            }
                         }
 
                         Text {
@@ -1307,13 +1266,6 @@ FloatingWindow {
                             }
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
-                            onClicked: keyNav.activateItem()
-                        }
                     }
                 }
             }
@@ -1339,11 +1291,6 @@ FloatingWindow {
                             font.family: "JetBrains Mono"
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
-                            }
                         }
 
                         Text {
@@ -1432,13 +1379,6 @@ FloatingWindow {
                             font.pixelSize: 13
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
-                            onClicked: { Theme.design = modelData.id }
-                        }
                     }
                 }
             }
@@ -1464,11 +1404,6 @@ FloatingWindow {
                             font.family: "JetBrains Mono"
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
-                            }
                         }
 
                         Text {
@@ -1590,13 +1525,6 @@ FloatingWindow {
                             font.pixelSize: 13
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
-                            onClicked: root.applyLayout(modelData.id)
-                        }
                     }
                 }
             }
@@ -1622,11 +1550,6 @@ FloatingWindow {
                             font.family: "JetBrains Mono"
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
-                            }
                         }
 
                         Text {
@@ -1714,13 +1637,6 @@ FloatingWindow {
                             }
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
-                            onClicked: root.toggleBluetooth(modelData)
-                        }
                     }
                 }
             }
@@ -1746,11 +1662,6 @@ FloatingWindow {
                             font.family: "JetBrains Mono"
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
-                            }
                         }
 
                         Text {
@@ -1821,13 +1732,6 @@ FloatingWindow {
                             }
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
-                            onClicked: { root.copyClipboardItem(modelData.line); root.closeRequested() }
-                        }
                     }
                 }
             }
@@ -1853,11 +1757,6 @@ FloatingWindow {
                             font.family: "JetBrains Mono"
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
-                            }
                         }
 
                         Text {
@@ -1919,22 +1818,13 @@ FloatingWindow {
 
                         Text {
                             anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-                            property bool active: modelData.id === "inhibit" ? InhibitState.inhibited : !!Theme[modelData.id]
+                            property bool active: !!Theme[modelData.id]
                             text:  active ? "[*]" : "[ ]"
-                            color: modelData.id === "inhibit"
-                                ? (active ? Theme.yellow : Theme.subtext)
-                                : (active ? Theme.green  : Theme.subtext)
+                            color: active ? Theme.green : Theme.subtext
                             font.family: "JetBrains Mono"
                             font.pixelSize: 13
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
-                            onClicked: root.toggleBarModule(modelData.id)
-                        }
                     }
                 }
             }
@@ -1959,11 +1849,6 @@ FloatingWindow {
                             font.family: "JetBrains Mono"
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
-                            }
                         }
 
                         Text {
@@ -1995,11 +1880,6 @@ FloatingWindow {
                             font.family: "JetBrains Mono"
                             font.pixelSize: 11
                             verticalAlignment: Text.AlignVCenter
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: Notifications.clearAll()
-                            }
                         }
                     }
                 }
@@ -2092,19 +1972,8 @@ FloatingWindow {
                             color: root.selectedIndex === index ? Theme.red : Theme.subtext
                             font.family: "JetBrains Mono"
                             font.pixelSize: 13
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: notifDelegate.dismiss()
-                            }
                         }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
-                        }
                     }
                 }
             }
@@ -2130,11 +1999,6 @@ FloatingWindow {
                             font.family: "JetBrains Mono"
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
-                            }
                         }
 
                         Text {
@@ -2250,14 +2114,6 @@ FloatingWindow {
                                             font.pixelSize: 9
                                         }
 
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: {
-                                                if (scaleRep.entry.monitor)
-                                                    root.setMonitorScale(scaleRep.entry.monitor, scaleChip.modelData)
-                                            }
-                                        }
                                     }
                                 }
                             }
@@ -2276,13 +2132,6 @@ FloatingWindow {
                                     font.family: "JetBrains Mono"
                                     font.pixelSize: 16
                                     verticalAlignment: Text.AlignVCenter
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: sysDelegate.modelData.type === "sensitivity"
-                                            ? root.setMouseSensitivity(root.mouseSensitivity - 0.1)
-                                            : root.setScrollFactor(root.scrollFactor - 0.05)
-                                    }
                                 }
 
                                 Text {
@@ -2305,13 +2154,6 @@ FloatingWindow {
                                     font.family: "JetBrains Mono"
                                     font.pixelSize: 14
                                     verticalAlignment: Text.AlignVCenter
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: sysDelegate.modelData.type === "sensitivity"
-                                            ? root.setMouseSensitivity(root.mouseSensitivity + 0.1)
-                                            : root.setScrollFactor(root.scrollFactor + 0.05)
-                                    }
                                 }
                             }
 
@@ -2323,23 +2165,8 @@ FloatingWindow {
                                 color: root.naturalScroll ? Theme.green : Theme.subtext
                                 font.family: "JetBrains Mono"
                                 font.pixelSize: 13
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.setNaturalScroll(!root.naturalScroll)
-                                }
                             }
 
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onPositionChanged: mouse => {
-                                    if (keyNav.hoverMoved(this, mouse.x, mouse.y))
-                                        root.selectedIndex = sysDelegate.index
-                                }
-                                onClicked: keyNav.activateItem()
-                            }
                         }
 
                         Rectangle {
@@ -2671,13 +2498,6 @@ FloatingWindow {
                         }
                     }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true
-                        onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedSearchIndex = index }
-                        onClicked: keyNav.activateSearchItem()
-                    }
                 }
             }
         }
