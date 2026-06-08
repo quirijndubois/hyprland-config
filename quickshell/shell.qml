@@ -169,6 +169,8 @@ ShellRoot {
                         BluetoothModule { visible: Theme.showBluetooth; screen: modelData }
                         Separator { visible: Theme.showNetwork && Theme.design !== "pills" }
                         NetworkModule { visible: Theme.showNetwork; screen: modelData }
+                        Separator { visible: Theme.design !== "pills" }
+                        InhibitModule { screen: modelData }
                         Separator { visible: trayMod.visible && Theme.design !== "pills" }
                         TrayModule { id: trayMod }
                     }

@@ -186,18 +186,19 @@ FloatingWindow {
     ]
 
     readonly property var barModules: [
+        { id: "showMenu",      label: "menu button" },
         { id: "showClock",     label: "clock" },
         { id: "showBattery",   label: "battery" },
         { id: "showCpu",       label: "cpu" },
         { id: "showMemory",    label: "memory" },
+        { id: "showGpu",       label: "gpu" },
+        { id: "showWorkspaces", label: "workspaces" },
+        { id: "showMusic",     label: "music visualizer" },
         { id: "showAudio",     label: "audio" },
         { id: "showBluetooth", label: "bluetooth" },
         { id: "showNetwork",   label: "network" },
-        { id: "showWorkspaces", label: "workspaces" },
+        { id: "inhibit",       label: "inhibit sleep" },
         { id: "showTray",      label: "tray" },
-        { id: "showMenu",      label: "menu button" },
-        { id: "showGpu",       label: "gpu" },
-        { id: "showMusic",     label: "music visualizer" },
     ]
 
     property var mainItems: [
@@ -453,7 +454,8 @@ FloatingWindow {
     }
 
     function toggleBarModule(id) {
-        Theme[id] = !Theme[id]
+        if (id === "inhibit") InhibitState.inhibited = !InhibitState.inhibited
+        else Theme[id] = !Theme[id]
     }
 
     Connections {
@@ -1714,8 +1716,11 @@ FloatingWindow {
 
                         Text {
                             anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-                            text: Theme[modelData.id] ? "[*]" : "[ ]"
-                            color: Theme[modelData.id] ? Theme.green : Theme.subtext
+                            property bool active: modelData.id === "inhibit" ? InhibitState.inhibited : !!Theme[modelData.id]
+                            text:  active ? "[*]" : "[ ]"
+                            color: modelData.id === "inhibit"
+                                ? (active ? Theme.yellow : Theme.subtext)
+                                : (active ? Theme.green  : Theme.subtext)
                             font.family: "JetBrains Mono"
                             font.pixelSize: 13
                         }
