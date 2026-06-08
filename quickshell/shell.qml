@@ -24,7 +24,6 @@ ShellRoot {
         function open() { root.requestedPage = "apps"; root.settingsOpen = true }
     }
 
-    // Ensure awww-daemon is running for wallpaper changes
     Process {
         command: ["awww-daemon"]
         running: true
@@ -45,17 +44,25 @@ ShellRoot {
                 screen: modelData
 
                 anchors { top: true; left: true; right: true }
-                implicitHeight: Theme.barHeight
+                exclusiveZone: Theme.barHeight
+                implicitHeight: Theme.barHeight + Theme.gapsOut + 300
+
                 color: "transparent"
-                exclusiveZone: implicitHeight
 
                 property var hyprMonitor: Hyprland.monitorFor(modelData)
 
+                // ── Bar strip ─────────────────────────────────────────
+                // For pills/islands, extend height by gapsOut so the pill is
+                // visually centered between the screen edge and the first window
+                // (which Hyprland pushes down by gapsOut from the exclusive zone).
                 Rectangle {
-                    anchors.fill: parent
+                    id: barStrip
+                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                    height: (Theme.design === "pills" || Theme.design === "islands")
+                            ? Theme.barHeight + Theme.gapsOut
+                            : Theme.barHeight
                     color: (Theme.design === "islands" || Theme.design === "pills") ? "transparent" : Theme.base
 
-                    // Bottom border — hidden in islands/pills mode
                     Rectangle {
                         visible: Theme.design !== "islands" && Theme.design !== "pills"
                         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
@@ -63,10 +70,10 @@ ShellRoot {
                         color: Theme.border
                     }
 
-                    // ── Left island background ─────────────────
+                    // ── Left island background ─────────────────────────
                     Rectangle {
                         visible: Theme.design === "islands"
-                        anchors { left: parent.left; leftMargin: 8; verticalCenter: parent.verticalCenter }
+                        anchors { left: parent.left; leftMargin: Theme.gapsOut; verticalCenter: parent.verticalCenter }
                         width: leftRow.implicitWidth + 24
                         height: parent.height - 8
                         color: Theme.surface
@@ -80,7 +87,7 @@ ShellRoot {
                         anchors {
                             left: parent.left
                             verticalCenter: parent.verticalCenter
-                            leftMargin: Theme.design === "islands" ? 20 : Theme.design === "pills" ? 8 : 16
+                            leftMargin: Theme.design === "islands" ? Theme.gapsOut + 12 : Theme.gapsOut
                         }
                         spacing: Theme.design === "pills" ? 4 : 0
 
@@ -95,18 +102,18 @@ ShellRoot {
                             }
                         }
                         Separator { visible: Theme.showClock && Theme.design !== "pills" }
-                        ClockModule { visible: Theme.showClock }
+                        ClockModule { visible: Theme.showClock; screen: modelData }
                         Separator { visible: Theme.showBattery && Theme.design !== "pills" }
-                        BatteryModule { visible: Theme.showBattery }
+                        BatteryModule { visible: Theme.showBattery; screen: modelData }
                         Separator { visible: Theme.showCpu && Theme.design !== "pills" }
-                        CpuModule { visible: Theme.showCpu }
+                        CpuModule { visible: Theme.showCpu; screen: modelData }
                         Separator { visible: Theme.showMemory && Theme.design !== "pills" }
-                        MemoryModule { visible: Theme.showMemory }
+                        MemoryModule { visible: Theme.showMemory; screen: modelData }
                         Separator { visible: Theme.showGpu && Theme.design !== "pills" }
-                        GpuModule { visible: Theme.showGpu }
+                        GpuModule { visible: Theme.showGpu; screen: modelData }
                     }
 
-                    // ── Center island / pill background ───────────────
+                    // ── Center island / pill background ────────────────
                     Rectangle {
                         visible: Theme.design === "islands" || Theme.design === "pills"
                         anchors { horizontalCenter: parent.horizontalCenter; verticalCenter: parent.verticalCenter }
@@ -129,10 +136,10 @@ ShellRoot {
                         WorkspacesModule { monitor: hyprMonitor; visible: Theme.showWorkspaces }
                     }
 
-                    // ── Right island background ────────────────
+                    // ── Right island background ────────────────────────
                     Rectangle {
                         visible: Theme.design === "islands"
-                        anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
+                        anchors { right: parent.right; rightMargin: Theme.gapsOut; verticalCenter: parent.verticalCenter }
                         width: rightRow.implicitWidth + 24
                         height: parent.height - 8
                         color: Theme.surface
@@ -146,17 +153,120 @@ ShellRoot {
                         anchors {
                             right: parent.right
                             verticalCenter: parent.verticalCenter
-                            rightMargin: Theme.design === "islands" ? 20 : Theme.design === "pills" ? 8 : 16
+                            rightMargin: Theme.design === "islands" ? Theme.gapsOut + 12 : Theme.gapsOut
                         }
                         spacing: Theme.design === "pills" ? 4 : 0
 
-                        AudioModule { visible: Theme.showAudio }
+                        MusicModule { id: musicMod; screen: modelData }
+                        Separator { visible: musicMod.visible && Theme.showAudio && Theme.design !== "pills" }
+                        AudioModule { visible: Theme.showAudio; screen: modelData }
                         Separator { visible: Theme.showBluetooth && Theme.design !== "pills" }
-                        BluetoothModule { visible: Theme.showBluetooth }
+                        BluetoothModule { visible: Theme.showBluetooth; screen: modelData }
                         Separator { visible: Theme.showNetwork && Theme.design !== "pills" }
-                        NetworkModule { visible: Theme.showNetwork }
+                        NetworkModule { visible: Theme.showNetwork; screen: modelData }
                         Separator { visible: trayMod.visible && Theme.design !== "pills" }
                         TrayModule { id: trayMod }
+                    }
+                }
+
+                // ── Hover popup card ───────────────────────────────────
+                Rectangle {
+                    id: popupCard
+
+                    // Height: animate open/close and also animate between
+                    // different module popup heights (e.g. cpu→clock)
+                    property real targetH: (BarHover.activeModule !== "" && BarHover.activeScreen === modelData) ? BarHover.popupH : 0
+                    property real animH: 0
+                    Behavior on animH {
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                    }
+                    onTargetHChanged: animH = targetH
+
+                    // X: only animate when popup is already open (animH > 40)
+                    // so first appearance snaps into position rather than sliding in.
+                    anchors.top: barStrip.bottom
+                    x: Math.max(4, Math.min(parent.width - width - 4, BarHover.anchorX - width / 2))
+                    Behavior on x {
+                        enabled: popupCard.animH > 40
+                        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                    }
+
+                    width: 224
+                    height: animH
+                    radius: 6
+                    color: Theme.surface
+                    border.color: Theme.border
+                    border.width: 1
+                    clip: true
+
+                    HoverHandler {
+                        onHoveredChanged: hovered ? BarHover.keepAlive() : BarHover.startHide()
+                    }
+
+                    // Sliding popup content — two loaders alternate so old
+                    // slides out while new slides in from the correct side.
+                    property int  activeLoader: 0
+                    property real prevAnchorX:  -1
+
+                    Connections {
+                        target: BarHover
+                        function onPopupComponentChanged() {
+                            if (BarHover.popupComponent === null) return
+
+                            const hasHistory  = popupCard.prevAnchorX >= 0
+                            const wasVisible  = popupCard.animH > 0
+                            const shouldSlide = hasHistory && wasVisible
+                            const goRight     = !hasHistory || BarHover.anchorX >= popupCard.prevAnchorX
+                            popupCard.prevAnchorX = BarHover.anchorX
+                            const w = popupCard.width
+                            const margin = 12
+
+                            if (popupCard.activeLoader === 0) {
+                                loaderB.sourceComponent = BarHover.popupComponent
+                                if (shouldSlide) {
+                                    loaderBslide.from = goRight ? w : -w
+                                    loaderBslide.to   = margin; loaderBslide.restart()
+                                    loaderAslide.from = margin
+                                    loaderAslide.to   = goRight ? -w : w; loaderAslide.restart()
+                                } else {
+                                    loaderB.x = margin; loaderA.x = -w
+                                }
+                                popupCard.activeLoader = 1
+                            } else {
+                                loaderA.sourceComponent = BarHover.popupComponent
+                                if (shouldSlide) {
+                                    loaderAslide.from = goRight ? w : -w
+                                    loaderAslide.to   = margin; loaderAslide.restart()
+                                    loaderBslide.from = margin
+                                    loaderBslide.to   = goRight ? -w : w; loaderBslide.restart()
+                                } else {
+                                    loaderA.x = margin; loaderB.x = -w
+                                }
+                                popupCard.activeLoader = 0
+                            }
+                        }
+                    }
+
+                    Loader {
+                        id: loaderA
+                        x: parent.width; y: 12
+                        width: parent.width - 24
+                        height: parent.height - 24
+                        NumberAnimation on x {
+                            id: loaderAslide
+                            duration: 220; easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Loader {
+                        id: loaderB
+                        x: parent.width; y: 12
+                        width: parent.width - 24
+                        height: parent.height - 24
+                        NumberAnimation on x {
+                            id: loaderBslide
+                            duration: 220; easing.type: Easing.OutCubic
+                        }
                     }
                 }
             }

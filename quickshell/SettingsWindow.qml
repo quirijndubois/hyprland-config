@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
+import Quickshell.Services.Notifications
 import QtQuick
 
 FloatingWindow {
@@ -196,6 +197,7 @@ FloatingWindow {
         { id: "showTray",      label: "tray" },
         { id: "showMenu",      label: "menu button" },
         { id: "showGpu",       label: "gpu" },
+        { id: "showMusic",     label: "music visualizer" },
     ]
 
     property var mainItems: [
@@ -207,6 +209,7 @@ FloatingWindow {
         { id: "bluetooth",     label: "bluetooth" },
         { id: "clipboard",     label: "clipboard" },
         { id: "bar",           label: "bar" },
+        { id: "notifications", label: "notifications" },
     ]
 
     onVisibleChanged: {
@@ -444,7 +447,7 @@ FloatingWindow {
 
     function saveMainItems() {
         const ids = root.mainItems.map(m => m.id).join(" ")
-        saveItemsProc.command = ["sh", "-c", "printf '%s' '" + ids + "' > $HOME/.config/quickshell/main-items"]
+        saveItemsProc.command = ["sh", "-c", "mkdir -p \"$HOME/.config/quickshell\" && printf '%s' '" + ids + "' > $HOME/.config/quickshell/main-items"]
         saveItemsProc.running = false
         saveItemsProc.running = true
     }
@@ -503,23 +506,25 @@ FloatingWindow {
             }
 
             if (event.key === Qt.Key_Up) {
-                const shift = event.modifiers & 0x02000000
-                if (shift && root.page === "main" && root.selectedIndex > 0) {
-                    const items = Array.from(root.mainItems)
-                    const tmp = items[root.selectedIndex]
-                    items[root.selectedIndex] = items[root.selectedIndex - 1]
-                    items[root.selectedIndex - 1] = tmp
-                    root.selectedIndex--
-                    root.mainItems = items
-                    root.saveMainItems()
-                } else if (inSearch) {
+                const shiftHeld = (event.modifiers & Qt.ShiftModifier) !== 0
+                if (inSearch) {
                     if (root.selectedSearchIndex > 0) {
                         root.selectedSearchIndex--
                         searchList.positionViewAtIndex(root.selectedSearchIndex, ListView.Contain)
                     }
+                } else if (shiftHeld && root.page === "main" && root.selectedIndex > 0) {
+                    const items = Array.from(root.mainItems)
+                    const i = root.selectedIndex
+                    const tmp = items[i]; items[i] = items[i - 1]; items[i - 1] = tmp
+                    root.mainItems = items
+                    root.selectedIndex = i - 1
+                    root.saveMainItems()
+                    mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 } else if (root.selectedIndex > 0) {
                     root.selectedIndex--
-                    if (root.page === "wallpaper")
+                    if (root.page === "main")
+                        mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "wallpaper")
                         wpList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "palette")
                         paletteList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
@@ -535,38 +540,43 @@ FloatingWindow {
                         barListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "clipboard")
                         clipListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "notifications")
+                        notifListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 }
                 event.accepted = true
                 return
             }
 
             if (event.key === Qt.Key_Down) {
-                const shift = event.modifiers & 0x02000000
-                const maxIdx = root.page === "main"       ? root.mainItems.length - 1
-                             : root.page === "wallpaper"   ? Math.max(0, root.wallpaperFiles.length - 1)
-                             : root.page === "apps"         ? Math.max(0, root.appsList.length - 1)
-                             : root.page === "bluetooth"    ? Math.max(0, root.bluetoothDevices.length - 1)
-                             : root.page === "design"       ? root.designOptions.length - 1
-                             : root.page === "layout"       ? root.layoutOptions.length - 1
-                             : root.page === "bar"          ? Math.max(0, root.barModules.length - 1)
-                             : root.page === "clipboard"    ? Math.max(0, root.clipboardItems.length - 1)
+                const shiftHeld = (event.modifiers & Qt.ShiftModifier) !== 0
+                const maxIdx = root.page === "main"          ? root.mainItems.length - 1
+                             : root.page === "wallpaper"      ? Math.max(0, root.wallpaperFiles.length - 1)
+                             : root.page === "apps"           ? Math.max(0, root.appsList.length - 1)
+                             : root.page === "bluetooth"      ? Math.max(0, root.bluetoothDevices.length - 1)
+                             : root.page === "design"         ? root.designOptions.length - 1
+                             : root.page === "layout"         ? root.layoutOptions.length - 1
+                             : root.page === "bar"            ? Math.max(0, root.barModules.length - 1)
+                             : root.page === "clipboard"      ? Math.max(0, root.clipboardItems.length - 1)
+                             : root.page === "notifications"  ? Math.max(0, notifListView.count - 1)
                              : root.paletteOptions.length - 1
-                if (shift && root.page === "main" && root.selectedIndex < maxIdx) {
-                    const items = Array.from(root.mainItems)
-                    const tmp = items[root.selectedIndex]
-                    items[root.selectedIndex] = items[root.selectedIndex + 1]
-                    items[root.selectedIndex + 1] = tmp
-                    root.selectedIndex++
-                    root.mainItems = items
-                    root.saveMainItems()
-                } else if (inSearch) {
+                if (inSearch) {
                     if (root.selectedSearchIndex < root.searchResults.length - 1) {
                         root.selectedSearchIndex++
                         searchList.positionViewAtIndex(root.selectedSearchIndex, ListView.Contain)
                     }
+                } else if (shiftHeld && root.page === "main" && root.selectedIndex < maxIdx) {
+                    const items = Array.from(root.mainItems)
+                    const i = root.selectedIndex
+                    const tmp = items[i]; items[i] = items[i + 1]; items[i + 1] = tmp
+                    root.mainItems = items
+                    root.selectedIndex = i + 1
+                    root.saveMainItems()
+                    mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 } else if (root.selectedIndex < maxIdx) {
                     root.selectedIndex++
-                    if (root.page === "wallpaper")
+                    if (root.page === "main")
+                        mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "wallpaper")
                         wpList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "palette")
                         paletteList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
@@ -582,6 +592,8 @@ FloatingWindow {
                         barListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "clipboard")
                         clipListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "notifications")
+                        notifListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 }
                 event.accepted = true
                 return
@@ -626,6 +638,9 @@ FloatingWindow {
             } else if (root.page === "clipboard") {
                 const item = root.clipboardItems[root.selectedIndex]
                 if (item) { root.copyClipboardItem(item.line); root.closeRequested() }
+            } else if (root.page === "notifications") {
+                const ni = notifListView.itemAtIndex(root.selectedIndex)
+                if (ni) ni.dismiss()
             }
         }
 
@@ -690,10 +705,9 @@ FloatingWindow {
 
             ListView {
                 id: mainList
-                anchors { left: parent.left; right: parent.right; top: mainHeader.bottom; topMargin: 1 }
-                height: contentHeight
+                anchors { left: parent.left; right: parent.right; top: mainHeader.bottom; bottom: parent.bottom; topMargin: 1 }
                 model: root.mainItems
-                interactive: false
+                clip: true
 
                 delegate: Rectangle {
                     required property var modelData
@@ -1506,7 +1520,7 @@ FloatingWindow {
                 }
             }
 
-            // ── Clipboard ──────────────────────────────────────
+            // ── Clipboard ─────────────────────────────────────
             Item {
                 anchors.fill: parent
                 visible: root.activeSubPage === "clipboard"
@@ -1612,107 +1626,298 @@ FloatingWindow {
                     }
                 }
             }
-        }
 
-        // ── Bar ────────────────────────────────────────────────
-        Item {
-            anchors.fill: parent
-            visible: root.activeSubPage === "bar"
+            // ── Bar ───────────────────────────────────────────
+            Item {
+                anchors.fill: parent
+                visible: root.activeSubPage === "bar"
 
-            Rectangle {
-                id: barHeader
-                width: parent.width
-                height: 44
-                color: Theme.surface
-
-                Row {
-                    anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
-                    spacing: 14
-
-                    Text {
-                        text: "< back"
-                        color: Theme.subtext
-                        font.family: "JetBrains Mono"
-                        font.pixelSize: 12
-                        verticalAlignment: Text.AlignVCenter
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: { root.page = "main"; root.selectedIndex = 0 }
-                        }
-                    }
-
-                    Text {
-                        text: "bar modules"
-                        color: Theme.purple
-                        font.family: "JetBrains Mono"
-                        font.pixelSize: 14
-                        font.bold: true
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                }
-
-                Text {
-                    anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-                    text: root.barModules.length + " modules"
-                    color: Theme.subtext
-                    font.family: "JetBrains Mono"
-                    font.pixelSize: 11
-                }
-            }
-
-            Rectangle { id: barDivider; anchors.top: barHeader.bottom; width: parent.width; height: 1; color: Theme.border }
-
-            ListView {
-                id: barListView
-                anchors { left: parent.left; right: parent.right; top: barDivider.bottom; bottom: parent.bottom }
-                model: root.barModules
-                clip: true
-                interactive: false
-
-                delegate: Rectangle {
-                    required property var modelData
-                    required property int index
-
-                    width: barListView.width
+                Rectangle {
+                    id: barHeader
+                    width: parent.width
                     height: 44
-                    color: root.selectedIndex === index ? Theme.border : "transparent"
+                    color: Theme.surface
 
                     Row {
                         anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
                         spacing: 14
 
                         Text {
-                            text: root.selectedIndex === index ? ">" : " "
-                            color: Theme.blue
+                            text: "< back"
+                            color: Theme.subtext
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 13
+                            font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
+                            }
                         }
 
                         Text {
-                            text: modelData.label
-                            color: root.selectedIndex === index ? Theme.text : Theme.subtext
+                            text: "bar modules"
+                            color: Theme.purple
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 13
+                            font.pixelSize: 14
+                            font.bold: true
                             verticalAlignment: Text.AlignVCenter
                         }
                     }
 
                     Text {
                         anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-                        text: Theme[modelData.id] ? "[*]" : "[ ]"
-                        color: Theme[modelData.id] ? Theme.green : Theme.subtext
+                        text: root.barModules.length + " modules"
+                        color: Theme.subtext
                         font.family: "JetBrains Mono"
-                        font.pixelSize: 13
+                        font.pixelSize: 11
+                    }
+                }
+
+                Rectangle { id: barDivider; anchors.top: barHeader.bottom; width: parent.width; height: 1; color: Theme.border }
+
+                ListView {
+                    id: barListView
+                    anchors { left: parent.left; right: parent.right; top: barDivider.bottom; bottom: parent.bottom }
+                    model: root.barModules
+                    clip: true
+                    interactive: false
+
+                    delegate: Rectangle {
+                        required property var modelData
+                        required property int index
+
+                        width: barListView.width
+                        height: 44
+                        color: root.selectedIndex === index ? Theme.border : "transparent"
+
+                        Row {
+                            anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                            spacing: 14
+
+                            Text {
+                                text: root.selectedIndex === index ? ">" : " "
+                                color: Theme.blue
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 13
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            Text {
+                                text: modelData.label
+                                color: root.selectedIndex === index ? Theme.text : Theme.subtext
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 13
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+
+                        Text {
+                            anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                            text: Theme[modelData.id] ? "[*]" : "[ ]"
+                            color: Theme[modelData.id] ? Theme.green : Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 13
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: root.selectedIndex = index
+                            onClicked: root.toggleBarModule(modelData.id)
+                        }
+                    }
+                }
+            }
+            // ── Notifications ──────────────────────────────────
+            Item {
+                anchors.fill: parent
+                visible: root.activeSubPage === "notifications"
+
+                Rectangle {
+                    id: notifHeader
+                    width: parent.width
+                    height: 44
+                    color: Theme.surface
+
+                    Row {
+                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                        spacing: 14
+
+                        Text {
+                            text: "< back"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 12
+                            verticalAlignment: Text.AlignVCenter
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
+                            }
+                        }
+
+                        Text {
+                            text: "notifications"
+                            color: Theme.purple
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 14
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                        }
                     }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        hoverEnabled: true
-                        onEntered: root.selectedIndex = index
-                        onClicked: root.toggleBarModule(modelData.id)
+                    Row {
+                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                        spacing: 12
+
+                        Text {
+                            text: notifListView.count + " total"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 11
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Text {
+                            visible: notifListView.count > 0
+                            text: "clear all"
+                            color: Theme.red
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 11
+                            verticalAlignment: Text.AlignVCenter
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    const arr = []
+                                    for (let i = 0; i < notifRep.count; i++) {
+                                        const it = notifRep.itemAt(i)
+                                        if (it) arr.push(it.modelData)
+                                    }
+                                    arr.forEach(n => { n.dismiss(); n.tracked = false })
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Rectangle { id: notifDivider; anchors.top: notifHeader.bottom; width: parent.width; height: 1; color: Theme.border }
+
+                Text {
+                    anchors.centerIn: parent
+                    visible: notifListView.count === 0
+                    text: "no notifications"
+                    color: Theme.subtext
+                    font.family: "JetBrains Mono"
+                    font.pixelSize: 13
+                }
+
+                // Hidden repeater for dismiss-all access
+                Item {
+                    width: 0; height: 0
+                    Repeater {
+                        id: notifRep
+                        model: Notifications.notifications
+                        delegate: Item {
+                            required property var modelData
+                            width: 0; height: 0
+                        }
+                    }
+                }
+
+                ListView {
+                    id: notifListView
+                    anchors { left: parent.left; right: parent.right; top: notifDivider.bottom; bottom: parent.bottom }
+                    model: Notifications.notifications
+                    clip: true
+                    visible: notifListView.count > 0
+
+                    delegate: Rectangle {
+                        id: notifDelegate
+                        required property var modelData
+                        required property int index
+
+                        width: notifListView.width
+                        height: 64
+                        color: root.selectedIndex === index ? Theme.border : "transparent"
+
+                        function dismiss() {
+                            modelData.dismiss()
+                            modelData.tracked = false
+                        }
+
+                        // Urgency bar on left edge
+                        Rectangle {
+                            anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+                            width: 3
+                            color: modelData.urgency === NotificationUrgency.Critical ? Theme.red
+                                 : modelData.urgency === NotificationUrgency.Low      ? Theme.subtext
+                                 : Theme.blue
+                        }
+
+                        Column {
+                            anchors {
+                                left: parent.left; leftMargin: 16
+                                right: dismissBtn.left; rightMargin: 8
+                                verticalCenter: parent.verticalCenter
+                            }
+                            spacing: 3
+
+                            Text {
+                                width: parent.width
+                                text: modelData.appName || "unknown"
+                                color: modelData.urgency === NotificationUrgency.Critical ? Theme.red
+                                     : modelData.urgency === NotificationUrgency.Low      ? Theme.subtext
+                                     : Theme.blue
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 10
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: modelData.summary || ""
+                                color: root.selectedIndex === index ? Theme.text : Theme.text
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 13
+                                font.bold: true
+                                elide: Text.ElideRight
+                                visible: text !== ""
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: modelData.body || ""
+                                color: Theme.subtext
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 10
+                                elide: Text.ElideRight
+                                visible: text !== ""
+                            }
+                        }
+
+                        Text {
+                            id: dismissBtn
+                            anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                            text: "x"
+                            color: root.selectedIndex === index ? Theme.red : Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 13
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: notifDelegate.dismiss()
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: root.selectedIndex = index
+                        }
                     }
                 }
             }

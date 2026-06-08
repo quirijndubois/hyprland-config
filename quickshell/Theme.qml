@@ -24,6 +24,8 @@ Singleton {
     property bool showWorkspaces: true
     property bool showMenu:       true
     property bool showGpu:        true
+    property bool showMusic:      true
+    property int  gapsOut:        10
 
     property color base:    "#1e1e2e"
     property color surface: "#181825"
@@ -143,14 +145,14 @@ Singleton {
 
     onNameChanged: {
         applyPalette(name)
-        saveProc.command = ["sh", "-c", "printf '%s' '" + name + "' > $HOME/.config/quickshell/theme"]
+        saveProc.command = ["sh", "-c", "mkdir -p \"$HOME/.config/quickshell\" && printf '%s' '" + name + "' > $HOME/.config/quickshell/theme"]
         saveProc.running = false
         saveProc.running = true
     }
 
     onDesignChanged: {
         applyDesign(design)
-        saveDesignProc.command = ["sh", "-c", "printf '%s' '" + design + "' > $HOME/.config/quickshell/design"]
+        saveDesignProc.command = ["sh", "-c", "mkdir -p \"$HOME/.config/quickshell\" && printf '%s' '" + design + "' > $HOME/.config/quickshell/design"]
         saveDesignProc.running = false
         saveDesignProc.running = true
     }
@@ -162,10 +164,11 @@ Singleton {
             showAudio: root.showAudio, showBluetooth: root.showBluetooth,
             showNetwork: root.showNetwork, showTray: root.showTray,
             showWorkspaces: root.showWorkspaces, showMenu: root.showMenu,
-            showGpu: root.showGpu
+            showGpu: root.showGpu,
+            showMusic: root.showMusic
         })
         const escaped = data.replace(/'/g, "'\\''")
-        barModulesSaveProc.command = ["sh", "-c", "printf '%s' '" + escaped + "' > $HOME/.config/quickshell/bar-modules"]
+        barModulesSaveProc.command = ["sh", "-c", "mkdir -p \"$HOME/.config/quickshell\" && printf '%s' '" + escaped + "' > $HOME/.config/quickshell/bar-modules"]
         barModulesSaveProc.running = false
         barModulesSaveProc.running = true
     }
@@ -181,6 +184,7 @@ Singleton {
     onShowWorkspacesChanged: saveBarModules()
     onShowMenuChanged: saveBarModules()
     onShowGpuChanged: saveBarModules()
+    onShowMusicChanged: saveBarModules()
 
     Process { id: saveProc }
     Process { id: saveDesignProc }
@@ -231,6 +235,7 @@ Singleton {
                         if (obj.showWorkspaces !== undefined) root.showWorkspaces = obj.showWorkspaces
                         if (obj.showMenu !== undefined) root.showMenu = obj.showMenu
                         if (obj.showGpu !== undefined) root.showGpu = obj.showGpu
+                        if (obj.showMusic !== undefined) root.showMusic = obj.showMusic
                     } catch(e) {}
                 }
             }
