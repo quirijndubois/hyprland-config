@@ -15,6 +15,8 @@ BarText {
     property var appStreams: []
 
     // Track PipeWire stream nodes
+    property bool streamUpdatePending: false
+
     Item {
         width: 0; height: 0
         Repeater {
@@ -23,13 +25,22 @@ BarText {
             delegate: Item {
                 required property var modelData
                 width: 0; height: 0
-                Component.onCompleted:  Qt.callLater(root.updateStreams)
-                Component.onDestruction: Qt.callLater(root.updateStreams)
+                Component.onCompleted:  root.scheduleUpdateStreams()
+                Component.onDestruction: root.scheduleUpdateStreams()
             }
         }
     }
 
     PwObjectTracker { objects: root.appStreams }
+
+    function scheduleUpdateStreams() {
+        if (root.streamUpdatePending) return
+        root.streamUpdatePending = true
+        Qt.callLater(function() {
+            root.streamUpdatePending = false
+            root.updateStreams()
+        })
+    }
 
     function updateStreams() {
         const streams = []

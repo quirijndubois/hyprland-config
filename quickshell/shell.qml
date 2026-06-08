@@ -49,6 +49,11 @@ ShellRoot {
 
                 color: "transparent"
 
+                mask: Region {
+                    Region { item: barStrip }
+                    Region { item: popupCard }
+                }
+
                 property var hyprMonitor: Hyprland.monitorFor(modelData)
 
                 // ── Bar strip ─────────────────────────────────────────
@@ -211,7 +216,12 @@ ShellRoot {
                     Connections {
                         target: BarHover
                         function onPopupComponentChanged() {
-                            if (BarHover.popupComponent === null) return
+                            if (BarHover.popupComponent === null) {
+                                loaderA.sourceComponent = null
+                                loaderB.sourceComponent = null
+                                popupCard.prevAnchorX = -1
+                                return
+                            }
 
                             const hasHistory  = popupCard.prevAnchorX >= 0
                             const wasVisible  = popupCard.animH > 0

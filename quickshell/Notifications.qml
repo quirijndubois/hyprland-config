@@ -16,6 +16,12 @@ Singleton {
 
         onNotification: n => {
             n.tracked = true
+            // Evict oldest once list exceeds 50
+            const list = server.trackedNotifications
+            if (list.length > 50) {
+                const oldest = list[0]
+                if (oldest) { oldest.dismiss(); oldest.tracked = false }
+            }
         }
     }
 }
