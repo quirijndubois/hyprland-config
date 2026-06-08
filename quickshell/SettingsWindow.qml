@@ -53,12 +53,34 @@ FloatingWindow {
     property string currentLayout: "dwindle"
     property string monitorName: ""
     readonly property string wallpapersDir: "/home/q/dev/hyprland-config/wallpapers/"
+    property var systemMonitors: []
+    property real mouseSensitivity: 0.0
+    property bool naturalScroll: true
+    property real scrollFactor: 0.4
+
+    property var systemSettingItems: {
+        const items = []
+        items.push({ type: "section", label: "display" })
+        for (const m of root.systemMonitors)
+            items.push({ type: "scale", label: m.name, sub: m.width + "×" + m.height, monitor: m })
+        items.push({ type: "section", label: "input" })
+        items.push({ type: "sensitivity",    label: "mouse sensitivity" })
+        items.push({ type: "natural_scroll", label: "natural scroll" })
+        items.push({ type: "scroll_factor",  label: "scroll factor" })
+        return items
+    }
 
     onPageChanged: {
         if (page !== "main") activeSubPage = page
         if (page === "bluetooth") btListProc.running = true
         if (page === "layout") layoutQueryProc.running = true
         if (page === "clipboard") clipListProc.running = true
+        if (page === "system") {
+            sysMonitorsProc.running = false
+            sysMonitorsProc.running = true
+            sysSensProc.running = false
+            sysSensProc.running = true
+        }
     }
 
     onSearchQueryChanged: {
@@ -211,6 +233,7 @@ FloatingWindow {
         { id: "clipboard",     label: "clipboard",     icon: "" },
         { id: "bar",           label: "bar",           icon: "" },
         { id: "notifications", label: "notifications", icon: "" },
+        { id: "system",        label: "system",        icon: "" },
     ]
 
     onVisibleChanged: {
@@ -320,6 +343,126 @@ FloatingWindow {
 
     Process { id: saveItemsProc }
     Process { id: clipProc; stdout: StdioCollector {} }
+
+    Process {
+        id: sysMonitorsProc
+        command: ["sh", "-c", "hyprctl -j monitors 2>/dev/null"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    root.systemMonitors = JSON.parse(this.text.trim()).map(m => ({
+                        name: m.name,
+                        desc: (m.description || m.name).split(" ")[0],
+                        width: m.width, height: m.height,
+                        refreshRate: m.refreshRate || 60,
+                        x: m.x, y: m.y,
+                        scale: m.scale || 1.0
+                    }))
+                } catch(e) {}
+            }
+        }
+    }
+
+    Process {
+        id: sysSensProc
+        command: ["sh", "-c",
+            "hyprctl -j getoption input:sensitivity 2>/dev/null; " +
+            "hyprctl -j getoption input:touchpad:natural_scroll 2>/dev/null; " +
+            "hyprctl -j getoption input:touchpad:scroll_factor 2>/dev/null"
+        ]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const text = this.text.trim()
+                let depth = 0, start = 0
+                const objects = []
+                for (let i = 0; i < text.length; i++) {
+                    if (text[i] === '{') { if (depth === 0) start = i; depth++ }
+                    else if (text[i] === '}') { depth--; if (depth === 0) objects.push(text.slice(start, i + 1)) }
+                }
+                try { const o = JSON.parse(objects[0]); if (o.float !== undefined) root.mouseSensitivity = Math.round(o.float * 10) / 10 } catch(e) {}
+                try { const o = JSON.parse(objects[1]); if (o.int !== undefined) root.naturalScroll = o.int === 1 } catch(e) {}
+                try { const o = JSON.parse(objects[2]); if (o.float !== undefined) root.scrollFactor = Math.round(o.float * 20) / 20 } catch(e) {}
+            }
+        }
+    }
+
+    Process {
+        id: sysApplyProc
+        stdout: StdioCollector {}
+        stderr: StdioCollector {}
+    }
+
+    readonly property string _devLua: "/home/q/dev/hyprland-config/hypr/hyprland.lua"
+
+    function setMonitorScale(mon, scale) {
+        const idx = root.systemMonitors.findIndex(m => m.name === mon.name)
+        if (idx >= 0) {
+            const arr = Array.from(root.systemMonitors)
+            arr[idx] = Object.assign({}, arr[idx], { scale: scale })
+            root.systemMonitors = arr
+        }
+        const s = "" + scale
+        const pat = "'s/\\(output = \"" + mon.name + "\"[^}]*scale = \\)[0-9.]*/\\1" + s + "/'"
+        const evalCmd = "hyprctl eval \"hl.monitor({ output = '" + mon.name + "', mode = '" + mon.width + "x" + mon.height + "', position = '" + mon.x + "x" + mon.y + "', scale = " + s + " })\""
+        sysApplyProc.command = ["sh", "-c",
+            "sed -i " + pat + " '" + root._devLua + "'" +
+            " ; sed -i " + pat + " \"$HOME/.config/hypr/hyprland.lua\"" +
+            " ; " + evalCmd
+        ]
+        sysApplyProc.running = false
+        sysApplyProc.running = true
+    }
+
+    function _rescaleCmd() {
+        let cmd = ""
+        for (const m of root.systemMonitors) {
+            const s = "" + m.scale
+            cmd += " ; hyprctl eval \"hl.monitor({ output = '" + m.name + "', mode = '" + m.width + "x" + m.height + "', position = '" + m.x + "x" + m.y + "', scale = " + s + " })\""
+        }
+        return cmd
+    }
+
+    function setMouseSensitivity(val) {
+        val = Math.round(Math.max(-1.0, Math.min(1.0, val)) * 10) / 10
+        root.mouseSensitivity = val
+        const pat = "'s/^\\(\\s*sensitivity = \\)[^,]*/\\1" + val + "/'"
+        sysApplyProc.command = ["sh", "-c",
+            "sed -i " + pat + " '" + root._devLua + "'" +
+            " ; sed -i " + pat + " \"$HOME/.config/hypr/hyprland.lua\"" +
+            " ; hyprctl keyword input:sensitivity " + val +
+            root._rescaleCmd()
+        ]
+        sysApplyProc.running = false
+        sysApplyProc.running = true
+    }
+
+    function setNaturalScroll(val) {
+        root.naturalScroll = val
+        const v = val ? "true" : "false"
+        const pat = "'s/^\\(\\s*natural_scroll = \\)[^,]*/\\1" + v + "/'"
+        sysApplyProc.command = ["sh", "-c",
+            "sed -i " + pat + " '" + root._devLua + "'" +
+            " ; sed -i " + pat + " \"$HOME/.config/hypr/hyprland.lua\"" +
+            " ; hyprctl keyword input:touchpad:natural_scroll " + (val ? 1 : 0) +
+            root._rescaleCmd()
+        ]
+        sysApplyProc.running = false
+        sysApplyProc.running = true
+    }
+
+    function setScrollFactor(val) {
+        val = Math.round(Math.max(0.1, Math.min(3.0, val)) * 20) / 20
+        root.scrollFactor = val
+        const pat = "'s/^\\(\\s*scroll_factor = \\)[^,]*/\\1" + val + "/'"
+        sysApplyProc.command = ["sh", "-c",
+            "sed -i " + pat + " '" + root._devLua + "'" +
+            " ; sed -i " + pat + " \"$HOME/.config/hypr/hyprland.lua\"" +
+            " ; hyprctl keyword input:touchpad:scroll_factor " + val +
+            root._rescaleCmd()
+        ]
+        sysApplyProc.running = false
+        sysApplyProc.running = true
+    }
 
     property var clipboardItems: []
 
@@ -554,6 +697,8 @@ FloatingWindow {
                         clipListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "notifications")
                         notifListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "system")
+                        sysListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 }
                 event.accepted = true
                 return
@@ -570,6 +715,7 @@ FloatingWindow {
                              : root.page === "bar"            ? Math.max(0, root.barModules.length - 1)
                              : root.page === "clipboard"      ? Math.max(0, root.clipboardItems.length - 1)
                              : root.page === "notifications"  ? Math.max(0, notifListView.count - 1)
+                             : root.page === "system"         ? Math.max(0, root.systemSettingItems.length - 1)
                              : root.paletteOptions.length - 1
                 if (inSearch) {
                     if (root.selectedSearchIndex < root.searchResults.length - 1) {
@@ -606,9 +752,32 @@ FloatingWindow {
                         clipListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "notifications")
                         notifListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "system")
+                        sysListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 }
                 event.accepted = true
                 return
+            }
+
+            if (event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
+                if (!inSearch && root.page === "system") {
+                    const item = root.systemSettingItems[root.selectedIndex]
+                    if (item && item.type !== "section") {
+                        const dir = event.key === Qt.Key_Right ? 1 : -1
+                        if (item.type === "sensitivity") {
+                            root.setMouseSensitivity(root.mouseSensitivity + dir * 0.1)
+                        } else if (item.type === "scroll_factor") {
+                            root.setScrollFactor(root.scrollFactor + dir * 0.05)
+                        } else if (item.type === "scale") {
+                            const scales = [1, 1.25, 1.5, 2]
+                            const ci = scales.findIndex(s => Math.abs(item.monitor.scale - s) < 0.01)
+                            const ni = Math.max(0, Math.min(scales.length - 1, (ci < 0 ? 0 : ci) + dir))
+                            root.setMonitorScale(item.monitor, scales[ni])
+                        }
+                    }
+                    event.accepted = true
+                    return
+                }
             }
 
             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -653,6 +822,20 @@ FloatingWindow {
             } else if (root.page === "notifications") {
                 const ni = notifListView.itemAtIndex(root.selectedIndex)
                 if (ni) ni.dismiss()
+            } else if (root.page === "system") {
+                const item = root.systemSettingItems[root.selectedIndex]
+                if (!item || item.type === "section") return
+                if (item.type === "scale") {
+                    const scales = [1, 1.25, 1.5, 2]
+                    const curIdx = scales.findIndex(s => Math.abs(item.monitor.scale - s) < 0.01)
+                    root.setMonitorScale(item.monitor, scales[(curIdx + 1) % scales.length])
+                } else if (item.type === "sensitivity") {
+                    root.setMouseSensitivity(root.mouseSensitivity + 0.1)
+                } else if (item.type === "natural_scroll") {
+                    root.setNaturalScroll(!root.naturalScroll)
+                } else if (item.type === "scroll_factor") {
+                    root.setScrollFactor(root.scrollFactor + 0.05)
+                }
             }
         }
 
@@ -1815,14 +1998,7 @@ FloatingWindow {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    const arr = []
-                                    for (let i = 0; i < notifRep.count; i++) {
-                                        const it = notifRep.itemAt(i)
-                                        if (it) arr.push(it.modelData)
-                                    }
-                                    arr.forEach(n => { n.dismiss(); n.tracked = false })
-                                }
+                                onClicked: Notifications.clearAll()
                             }
                         }
                     }
@@ -1839,23 +2015,10 @@ FloatingWindow {
                     font.pixelSize: 13
                 }
 
-                // Hidden repeater for dismiss-all access
-                Item {
-                    width: 0; height: 0
-                    Repeater {
-                        id: notifRep
-                        model: Notifications.notifications
-                        delegate: Item {
-                            required property var modelData
-                            width: 0; height: 0
-                        }
-                    }
-                }
-
                 ListView {
                     id: notifListView
                     anchors { left: parent.left; right: parent.right; top: notifDivider.bottom; bottom: parent.bottom }
-                    model: Notifications.notifications
+                    model: Notifications.history
                     clip: true
                     visible: notifListView.count > 0
 
@@ -1869,8 +2032,7 @@ FloatingWindow {
                         color: root.selectedIndex === index ? Theme.border : "transparent"
 
                         function dismiss() {
-                            modelData.dismiss()
-                            modelData.tracked = false
+                            Notifications.dismiss(modelData.id)
                         }
 
                         // Urgency bar on left edge
@@ -1942,6 +2104,249 @@ FloatingWindow {
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
                             onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
+                        }
+                    }
+                }
+            }
+
+            // ── System ────────────────────────────────────────
+            Item {
+                anchors.fill: parent
+                visible: root.activeSubPage === "system"
+
+                Rectangle {
+                    id: sysHeader
+                    width: parent.width
+                    height: 44
+                    color: Theme.surface
+
+                    Row {
+                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                        spacing: 14
+
+                        Text {
+                            text: "< back"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 12
+                            verticalAlignment: Text.AlignVCenter
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: { root.page = "main"; root.selectedIndex = 0 }
+                            }
+                        }
+
+                        Text {
+                            text: "system"
+                            color: Theme.purple
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 14
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+                }
+
+                Rectangle { id: sysDivider; anchors.top: sysHeader.bottom; width: parent.width; height: 1; color: Theme.border }
+
+                ListView {
+                    id: sysListView
+                    anchors { left: parent.left; right: parent.right; top: sysDivider.bottom; bottom: parent.bottom }
+                    model: root.systemSettingItems
+                    clip: true
+                    interactive: true
+
+                    delegate: Item {
+                        id: sysDelegate
+                        required property var modelData
+                        required property int index
+                        property bool isSection: sysDelegate.modelData.type === "section"
+                        property bool isSelected: root.selectedIndex === sysDelegate.index
+
+                        width: sysListView.width
+                        height: isSection ? 32 : 48
+
+                        // Section header background
+                        Rectangle {
+                            anchors.fill: parent
+                            visible: sysDelegate.isSection
+                            color: Theme.surface
+
+                            Text {
+                                anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                                text: sysDelegate.modelData.label || ""
+                                color: Theme.blue
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 11
+                                font.bold: true
+                            }
+                        }
+
+                        // Interactive row
+                        Rectangle {
+                            anchors.fill: parent
+                            visible: !sysDelegate.isSection
+                            color: sysDelegate.isSelected ? Theme.border : "transparent"
+
+                            // Cursor indicator
+                            Text {
+                                anchors { left: parent.left; leftMargin: 8; verticalCenter: parent.verticalCenter }
+                                visible: sysDelegate.isSelected
+                                text: ">"
+                                color: Theme.blue
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 13
+                            }
+
+                            // Label column
+                            Column {
+                                anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                                spacing: 2
+
+                                Text {
+                                    text: sysDelegate.modelData.label || ""
+                                    color: sysDelegate.isSelected ? Theme.text : Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: 12
+                                }
+
+                                Text {
+                                    visible: (sysDelegate.modelData.sub || "") !== ""
+                                    text: sysDelegate.modelData.sub || ""
+                                    color: Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: 10
+                                }
+                            }
+
+                            // Scale chips
+                            Row {
+                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                                visible: sysDelegate.modelData.type === "scale"
+                                spacing: 4
+
+                                Repeater {
+                                    id: scaleRep
+                                    property var entry: sysDelegate.modelData
+                                    model: [1, 1.25, 1.5, 2]
+
+                                    delegate: Rectangle {
+                                        id: scaleChip
+                                        required property var modelData
+                                        property bool active: scaleRep.entry.monitor
+                                            ? Math.abs(scaleRep.entry.monitor.scale - scaleChip.modelData) < 0.01
+                                            : false
+                                        width: 36; height: 22; radius: 3
+                                        color: active ? Theme.blue : Theme.surface
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: scaleChip.modelData % 1 === 0
+                                                ? Math.round(scaleChip.modelData) + "×"
+                                                : scaleChip.modelData + "×"
+                                            color: active ? Theme.base : Theme.subtext
+                                            font.family: "JetBrains Mono"
+                                            font.pixelSize: 9
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                if (scaleRep.entry.monitor)
+                                                    root.setMonitorScale(scaleRep.entry.monitor, scaleChip.modelData)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Stepper (+/value/−) for sensitivity and scroll_factor
+                            Row {
+                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                                visible: sysDelegate.modelData.type === "sensitivity" || sysDelegate.modelData.type === "scroll_factor"
+                                spacing: 10
+
+                                Text {
+                                    text: "−"
+                                    color: (sysDelegate.modelData.type === "sensitivity" && root.mouseSensitivity <= -1.0) ||
+                                           (sysDelegate.modelData.type === "scroll_factor" && root.scrollFactor <= 0.1)
+                                           ? Theme.surface : Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: 16
+                                    verticalAlignment: Text.AlignVCenter
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: sysDelegate.modelData.type === "sensitivity"
+                                            ? root.setMouseSensitivity(root.mouseSensitivity - 0.1)
+                                            : root.setScrollFactor(root.scrollFactor - 0.05)
+                                    }
+                                }
+
+                                Text {
+                                    text: sysDelegate.modelData.type === "sensitivity"
+                                        ? root.mouseSensitivity.toFixed(2)
+                                        : root.scrollFactor.toFixed(2)
+                                    color: Theme.text
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: 12
+                                    width: 44
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                Text {
+                                    text: "+"
+                                    color: (sysDelegate.modelData.type === "sensitivity" && root.mouseSensitivity >= 1.0) ||
+                                           (sysDelegate.modelData.type === "scroll_factor" && root.scrollFactor >= 3.0)
+                                           ? Theme.surface : Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: 14
+                                    verticalAlignment: Text.AlignVCenter
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: sysDelegate.modelData.type === "sensitivity"
+                                            ? root.setMouseSensitivity(root.mouseSensitivity + 0.1)
+                                            : root.setScrollFactor(root.scrollFactor + 0.05)
+                                    }
+                                }
+                            }
+
+                            // Toggle for natural_scroll
+                            Text {
+                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                                visible: sysDelegate.modelData.type === "natural_scroll"
+                                text: root.naturalScroll ? "[*]" : "[ ]"
+                                color: root.naturalScroll ? Theme.green : Theme.subtext
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 13
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.setNaturalScroll(!root.naturalScroll)
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onPositionChanged: mouse => {
+                                    if (keyNav.hoverMoved(this, mouse.x, mouse.y))
+                                        root.selectedIndex = sysDelegate.index
+                                }
+                                onClicked: keyNav.activateItem()
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.bottom: parent.bottom
+                            width: parent.width; height: 1
+                            color: Theme.border; opacity: 0.3
+                            visible: !sysDelegate.isSection
                         }
                     }
                 }

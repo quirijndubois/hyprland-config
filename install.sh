@@ -29,7 +29,7 @@ sync_dir() {
 sync_all() {
   changed=0
 
-  for dir in hypr dunst kitty quickshell; do
+  for dir in hypr kitty quickshell; do
     if sync_dir "$dir"; then
       changed=1
     fi
@@ -46,7 +46,7 @@ sync_all
 # Create default main-items order if it doesn't exist yet
 quickshell_config="$CONFIG_DIR/quickshell"
 if [ ! -f "$quickshell_config/main-items" ]; then
-  printf 'wallpaper palette design layout apps bluetooth\n' > "$quickshell_config/main-items"
+  printf 'wallpaper palette design layout apps bluetooth clipboard bar notifications system\n' > "$quickshell_config/main-items"
   echo "main-items has been created!"
 fi
 
@@ -56,7 +56,7 @@ echo "Install complete"
 if [ "$WATCH_MODE" -eq 1 ]; then
   echo "Watching for changes..."
   inotifywait -m -r -e modify,create,delete,move \
-    hypr dunst kitty quickshell |
+    hypr kitty quickshell |
   while read -r _; do
     sync_all
   done

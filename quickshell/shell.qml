@@ -2,6 +2,7 @@
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
+import Quickshell.Services.Notifications
 import QtQuick
 
 ShellRoot {
@@ -83,6 +84,28 @@ ShellRoot {
                             : Theme.barHeight
                     color: (Theme.design === "islands" || Theme.design === "pills") ? "transparent" : Theme.base
 
+                    property bool notifActive: false
+                    property string notifApp: ""
+                    property string notifSummary: ""
+                    property int notifUrgency: 1
+
+                    Timer {
+                        id: notifTimer
+                        interval: 5000
+                        onTriggered: barStrip.notifActive = false
+                    }
+
+                    Connections {
+                        target: Notifications
+                        function onNewNotification(n) {
+                            barStrip.notifApp = n.appName || ""
+                            barStrip.notifSummary = n.summary || ""
+                            barStrip.notifUrgency = n.urgency
+                            barStrip.notifActive = true
+                            notifTimer.restart()
+                        }
+                    }
+
                     Rectangle {
                         visible: Theme.design !== "islands" && Theme.design !== "pills"
                         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
@@ -137,7 +160,8 @@ ShellRoot {
                     Rectangle {
                         visible: Theme.design === "islands" || Theme.design === "pills"
                         anchors { horizontalCenter: parent.horizontalCenter; verticalCenter: parent.verticalCenter }
-                        width: centerRow.implicitWidth + 24
+                        width: barStrip.notifActive ? notifCenterRow.implicitWidth + 32 : centerRow.implicitWidth + 24
+                        Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
                         height: Theme.design === "pills" ? Theme.barHeight - 8 : parent.height - 8
                         color: Theme.surface
                         radius: Theme.design === "pills" ? (Theme.barHeight - 8) / 2 : 8
@@ -152,8 +176,54 @@ ShellRoot {
                             verticalCenter: parent.verticalCenter
                         }
                         spacing: 0
+                        opacity: barStrip.notifActive ? 0.0 : 1.0
+                        Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
 
-                        WorkspacesModule { monitor: hyprMonitor; visible: Theme.showWorkspaces }
+                        WorkspacesModule { monitor: hyprMonitor; screen: modelData; visible: Theme.showWorkspaces }
+                    }
+
+                    // ── In-bar notification display ────────────────────
+                    Row {
+                        id: notifCenterRow
+                        anchors {
+                            horizontalCenter: parent.horizontalCenter
+                            verticalCenter: parent.verticalCenter
+                        }
+                        spacing: 8
+                        opacity: barStrip.notifActive ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
+
+                        Text {
+                            text: barStrip.notifApp
+                            color: barStrip.notifUrgency === NotificationUrgency.Critical ? Theme.red
+                                 : barStrip.notifUrgency === NotificationUrgency.Low      ? Theme.subtext
+                                 : Theme.blue
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 11
+                            verticalAlignment: Text.AlignVCenter
+                            width: Math.min(implicitWidth, 100)
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            visible: barStrip.notifSummary !== ""
+                            text: "·"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 11
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Text {
+                            text: barStrip.notifSummary
+                            color: Theme.text
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 12
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                            width: Math.min(implicitWidth, 200)
+                            elide: Text.ElideRight
+                        }
                     }
 
                     // ── Right island background ────────────────────────
@@ -296,6 +366,7 @@ ShellRoot {
                         }
                     }
                 }
+
             }
         }
     }
