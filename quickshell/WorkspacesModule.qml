@@ -2,33 +2,76 @@ import QtQuick
 import Quickshell.Hyprland
 import Quickshell.Services.Notifications
 
-Row {
+Item {
     id: root
-    spacing: 8
-    property var monitor: null
+    implicitWidth: row.implicitWidth + 8
+    implicitHeight: row.implicitHeight
     property var screen: null
+    property var monitor: null
+    property int highlightX: -24
 
-    Repeater {
-        model: Hyprland.workspaces
+    Row {
+        id: row
+        x: 4
+        spacing: 4
+        leftPadding: 0
+        rightPadding: 0
 
-        delegate: Text {
-            required property var modelData
+        Repeater {
+            id: rep
+            model: Hyprland.workspaces
 
-            property bool focused: modelData.focused
-            visible: !root.monitor || modelData.monitor === root.monitor
+            delegate: Item {
+                required property var modelData
+                width: 24
+                height: Theme.barFontSize + 8
 
-            text: focused ? "[" + modelData.name + "]" : modelData.name
-            color: focused ? Theme.blue : Theme.subtext
-            font.family: Theme.barFontFamily
-            font.bold: focused || Theme.barFontBold
-            font.pixelSize: Theme.barFontSize
-            verticalAlignment: Text.AlignVCenter
+                visible: !root.monitor || modelData.monitor === root.monitor
 
-            MouseArea {
-                anchors.fill: parent
-                onClicked: modelData.activate()
-                cursorShape: Qt.PointingHandCursor
+                property bool isFocused: modelData.focused
+
+                onIsFocusedChanged: {
+                    if (isFocused) {
+                        Qt.callLater(() => root.highlightX = mapToItem(root, 0, 0).x)
+                    }
+                }
+
+                Component.onCompleted: {
+                    if (modelData.focused) {
+                        Qt.callLater(() => root.highlightX = mapToItem(root, 0, 0).x)
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: modelData.name
+                    color: modelData.focused ? Theme.text : Theme.subtext
+                    font.family: Theme.barFontFamily
+                    font.bold: modelData.focused || Theme.barFontBold
+                    font.pixelSize: Theme.barFontSize
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: modelData.activate()
+                    cursorShape: Qt.PointingHandCursor
+                }
             }
+        }
+    }
+
+    Rectangle {
+        id: highlight
+        width: 24
+        height: Theme.barFontSize + 8
+        y: 0
+        radius: 3
+        color: Theme.blue
+        opacity: 0.35
+        x: root.highlightX
+
+        Behavior on x {
+            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
         }
     }
 
@@ -97,7 +140,6 @@ Row {
                         required property var modelData
                         required property int index
 
-                        // Show only the 5 most recent; invisible items are excluded from Column layout
                         visible: index >= Notifications.history.length - 5
                         width: parent.width
                         height: notifItemCol.implicitHeight + 12

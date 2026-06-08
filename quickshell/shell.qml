@@ -130,7 +130,7 @@ ShellRoot {
                         anchors {
                             left: parent.left
                             verticalCenter: parent.verticalCenter
-                            leftMargin: Theme.design === "islands" ? Theme.gapsOut + 12 : Theme.gapsOut
+                            leftMargin: Theme.design === "islands" ? Theme.gapsOut + 12 : (Theme.showMenu ? Theme.gapsOut : 4)
                         }
                         spacing: Theme.design === "pills" ? 4 : 0
 
@@ -144,7 +144,7 @@ ShellRoot {
                                 onClicked: root.settingsOpen = !root.settingsOpen
                             }
                         }
-                        Separator { visible: Theme.showClock && Theme.design !== "pills" }
+                        Separator { visible: Theme.showMenu && Theme.showClock && Theme.design !== "pills" }
                         ClockModule { visible: Theme.showClock; screen: modelData }
                         Separator { visible: Theme.showBattery && Theme.design !== "pills" }
                         BatteryModule { visible: Theme.showBattery; screen: modelData }

@@ -107,36 +107,36 @@ Singleton {
 
     function applyDesign(d) {
         if (d === "compact") {
-            barHeight = 24; barFontSize = 11
+            barHeight = 24
             barFontFamily = "JetBrains Mono"; barFontBold = false
             separatorText = "  │  "
         } else if (d === "islands") {
-            barHeight = 30; barFontSize = 13
+            barHeight = 30
             barFontFamily = "JetBrains Mono"; barFontBold = false
             separatorText = "  │  "
         } else if (d === "bold") {
-            barHeight = 40; barFontSize = 14
+            barHeight = 40
             barFontFamily = "JetBrains Mono"; barFontBold = true
             separatorText = "  │  "
         } else if (d === "minimal") {
-            barHeight = 18; barFontSize = 9
+            barHeight = 18
             barFontFamily = "JetBrains Mono"; barFontBold = false
             separatorText = " · "
         } else if (d === "clean") {
-            barHeight = 30; barFontSize = 13
+            barHeight = 30
             barFontFamily = "Noto Sans"; barFontBold = false
             separatorText = "  /  "
         } else if (d === "hacker") {
-            barHeight = 32; barFontSize = 12
+            barHeight = 32
             barFontFamily = "Hack"; barFontBold = false
             separatorText = "  |  "
         } else if (d === "pills") {
-            barHeight = 32; barFontSize = 13
+            barHeight = 32
             barFontFamily = "JetBrains Mono"; barFontBold = false
             separatorText = "  │  "
         } else {
             // default
-            barHeight = 30; barFontSize = 13
+            barHeight = 30
             barFontFamily = "JetBrains Mono"; barFontBold = false
             separatorText = "  │  "
         }
@@ -189,9 +189,16 @@ Singleton {
     onShowMusicChanged: saveBarModules()
     onShowInhibitChanged: saveBarModules()
 
+    onBarFontSizeChanged: {
+        saveBarFontSizeProc.command = ["sh", "-c", "mkdir -p \"$HOME/.config/quickshell\" && printf '%s' '" + root.barFontSize + "' > $HOME/.config/quickshell/bar-font-size"]
+        saveBarFontSizeProc.running = false
+        saveBarFontSizeProc.running = true
+    }
+
     Process { id: saveProc }
     Process { id: saveDesignProc }
     Process { id: barModulesSaveProc }
+    Process { id: saveBarFontSizeProc }
 
     Process {
         id: loadProc
@@ -213,6 +220,21 @@ Singleton {
             onStreamFinished: {
                 const saved = this.text.trim()
                 if (saved) root.design = saved
+            }
+        }
+    }
+
+    Process {
+        id: loadBarFontSizeProc
+        command: ["sh", "-c", "cat $HOME/.config/quickshell/bar-font-size 2>/dev/null"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const saved = this.text.trim()
+                if (saved) {
+                    const val = parseInt(saved, 10)
+                    if (!isNaN(val)) root.barFontSize = val
+                }
             }
         }
     }

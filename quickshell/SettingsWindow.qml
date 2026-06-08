@@ -63,6 +63,7 @@ FloatingWindow {
         items.push({ type: "section", label: "display" })
         for (const m of root.systemMonitors)
             items.push({ type: "scale", label: m.name, sub: m.width + "×" + m.height, monitor: m })
+        items.push({ type: "font_size", label: "font size" })
         items.push({ type: "section", label: "input" })
         items.push({ type: "sensitivity",    label: "mouse sensitivity" })
         items.push({ type: "natural_scroll", label: "natural scroll" })
@@ -155,6 +156,15 @@ FloatingWindow {
         for (const c of clipboardItems) {
             const s = root.fuzzyScore(searchQuery, c.preview)
             if (s > 0) results.push({ score: s, type: "clipboard", label: c.preview, line: c.line })
+        }
+        for (const s of root.systemSettingItems) {
+            if (s.type === "section") continue
+            const s2 = Math.max(root.fuzzyScore(searchQuery, s.label), s.type === "scale" ? root.fuzzyScore(searchQuery, s.monitor.name) : 0)
+            if (s2 > 0) results.push({ score: s2, type: "system_item", label: s.label, sub: s.sub || "", page: "system", index: root.systemSettingItems.indexOf(s) })
+        }
+        for (const b of root.barModules) {
+            const s2 = Math.max(root.fuzzyScore(searchQuery, b.label), root.fuzzyScore(searchQuery, b.id))
+            if (s2 > 0) results.push({ score: s2, type: "bar_module", label: b.label, id: b.id, page: "bar", index: root.barModules.indexOf(b) })
         }
         results.sort((a, b) => b.score - a.score)
         if (results.length === 0 && !mathResult) results.push({ type: "web", label: searchQuery })
@@ -763,6 +773,8 @@ FloatingWindow {
                             root.setMouseSensitivity(root.mouseSensitivity + dir * 0.1)
                         } else if (item.type === "scroll_factor") {
                             root.setScrollFactor(root.scrollFactor + dir * 0.05)
+                        } else if (item.type === "font_size") {
+                            Theme.barFontSize = Math.max(8, Math.min(20, Theme.barFontSize + dir))
                         } else if (item.type === "scale") {
                             const scales = [1, 1.25, 1.5, 2]
                             const ci = scales.findIndex(s => Math.abs(item.monitor.scale - s) < 0.01)
@@ -830,6 +842,8 @@ FloatingWindow {
                     root.setNaturalScroll(!root.naturalScroll)
                 } else if (item.type === "scroll_factor") {
                     root.setScrollFactor(root.scrollFactor + 0.05)
+                } else if (item.type === "font_size") {
+                    Theme.barFontSize = Math.min(20, Theme.barFontSize + 1)
                 }
             }
         }
@@ -866,6 +880,8 @@ FloatingWindow {
             else if (result.type === "layout") { root.applyLayout(result.id) }
             else if (result.type === "menu") { root.page = result.id; root.selectedIndex = 0 }
             else if (result.type === "clipboard") { root.copyClipboardItem(result.line); root.closeRequested(); return }
+            else if (result.type === "system_item") { root.page = result.page; root.selectedIndex = result.index }
+            else if (result.type === "bar_module") { root.page = result.page; root.selectedIndex = result.index }
             root.searchQuery = ""
         }
 
@@ -2118,16 +2134,17 @@ FloatingWindow {
                                 }
                             }
 
-                            // Stepper (+/value/−) for sensitivity and scroll_factor
+                            // Stepper (+/value/−) for sensitivity, scroll_factor, and font_size
                             Row {
                                 anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
-                                visible: sysDelegate.modelData.type === "sensitivity" || sysDelegate.modelData.type === "scroll_factor"
+                                visible: sysDelegate.modelData.type === "sensitivity" || sysDelegate.modelData.type === "scroll_factor" || sysDelegate.modelData.type === "font_size"
                                 spacing: 10
 
                                 Text {
                                     text: "−"
                                     color: (sysDelegate.modelData.type === "sensitivity" && root.mouseSensitivity <= -1.0) ||
-                                           (sysDelegate.modelData.type === "scroll_factor" && root.scrollFactor <= 0.1)
+                                           (sysDelegate.modelData.type === "scroll_factor" && root.scrollFactor <= 0.1) ||
+                                           (sysDelegate.modelData.type === "font_size" && Theme.barFontSize <= 8)
                                            ? Theme.surface : Theme.subtext
                                     font.family: "JetBrains Mono"
                                     font.pixelSize: 16
@@ -2137,7 +2154,9 @@ FloatingWindow {
                                 Text {
                                     text: sysDelegate.modelData.type === "sensitivity"
                                         ? root.mouseSensitivity.toFixed(2)
-                                        : root.scrollFactor.toFixed(2)
+                                        : sysDelegate.modelData.type === "scroll_factor"
+                                        ? root.scrollFactor.toFixed(2)
+                                        : Theme.barFontSize
                                     color: Theme.text
                                     font.family: "JetBrains Mono"
                                     font.pixelSize: 12
@@ -2149,7 +2168,8 @@ FloatingWindow {
                                 Text {
                                     text: "+"
                                     color: (sysDelegate.modelData.type === "sensitivity" && root.mouseSensitivity >= 1.0) ||
-                                           (sysDelegate.modelData.type === "scroll_factor" && root.scrollFactor >= 3.0)
+                                           (sysDelegate.modelData.type === "scroll_factor" && root.scrollFactor >= 3.0) ||
+                                           (sysDelegate.modelData.type === "font_size" && Theme.barFontSize >= 20)
                                            ? Theme.surface : Theme.subtext
                                     font.family: "JetBrains Mono"
                                     font.pixelSize: 14
@@ -2254,9 +2274,15 @@ FloatingWindow {
                     required property int index
 
                     width: searchList.width
-                    height: modelData.type === "math" ? 52
-                          : (modelData.type === "wallpaper" || modelData.type === "app" || modelData.type === "bluetooth" || modelData.type === "layout") ? 56 : 44
+                    height: 52
                     color: root.selectedSearchIndex === index ? Theme.border : "transparent"
+
+                    Rectangle {
+                        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                        height: 1
+                        color: Theme.border
+                        opacity: 0.3
+                    }
 
                     Row {
                         anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
@@ -2281,15 +2307,19 @@ FloatingWindow {
                                 font.family: "JetBrains Mono"
                                 font.pixelSize: modelData.type === "math" ? 16 : 13
                                 font.bold: modelData.type === "math"
+                                elide: modelData.type === "clipboard" ? Text.ElideRight : Text.ElideNone
+                                width: modelData.type === "clipboard" ? searchList.width - 100 : implicitWidth
                             }
 
                             Text {
-                                text: (modelData.type === "design" || modelData.type === "layout") ? modelData.desc
+                                text: modelData.type === "design" || modelData.type === "layout" ? modelData.desc
                                     : modelData.type === "menu" ? "open menu"
                                     : modelData.type === "file" ? (modelData.isDir ? "directory" : "file")
                                     : modelData.type === "math" ? modelData.expr
                                     : modelData.type === "web"       ? "search the web"
                                     : modelData.type === "clipboard" ? "clipboard"
+                                    : modelData.type === "system_item" ? (modelData.sub || "system setting")
+                                    : modelData.type === "bar_module" ? "bar module"
                                     : modelData.type
                                 color: modelData.type === "wallpaper"  ? Theme.teal
                                      : modelData.type === "palette"    ? Theme.yellow
@@ -2301,6 +2331,8 @@ FloatingWindow {
                                      : modelData.type === "math"       ? Theme.subtext
                                      : modelData.type === "web"        ? Theme.yellow
                                      : modelData.type === "clipboard"  ? Theme.teal
+                                     : modelData.type === "system_item" ? Theme.blue
+                                     : modelData.type === "bar_module" ? Theme.purple
                                      : Theme.blue
                                 font.family: "JetBrains Mono"
                                 font.pixelSize: 10
@@ -2385,42 +2417,42 @@ FloatingWindow {
                         visible: layoutSearchPrev.res.type === "layout"
                         width: 45; height: 45; radius: 4; color: Theme.surface
 
-                        Row {
-                            visible: layoutSearchPrev.res.type === "layout" && layoutSearchPrev.res.id === "dwindle"
-                            anchors.centerIn: parent; spacing: 1
-                            Rectangle { width: 16; height: 37; radius: 2; color: Theme.blue; opacity: 0.4 }
-                            Column {
-                                spacing: 1
-                                Rectangle { width: 20; height: 18; radius: 2; color: Theme.blue; opacity: 0.4 }
-                                Row {
+                            Row {
+                                visible: layoutSearchPrev.res.type === "layout" && layoutSearchPrev.res.id === "dwindle"
+                                anchors.centerIn: parent; spacing: 1
+                                Rectangle { width: 16; height: 37; radius: 2; color: Theme.blue; opacity: 0.45 }
+                                Column {
                                     spacing: 1
-                                    Rectangle { width: 9; height: 18; radius: 2; color: Theme.blue; opacity: 0.4 }
-                                    Rectangle { width: 9; height: 18; radius: 2; color: Theme.blue; opacity: 0.4 }
+                                    Rectangle { width: 20; height: 18; radius: 2; color: Theme.blue; opacity: 0.45 }
+                                    Row {
+                                        spacing: 1
+                                        Rectangle { width: 9; height: 18; radius: 2; color: Theme.blue; opacity: 0.45 }
+                                        Rectangle { width: 9; height: 18; radius: 2; color: Theme.blue; opacity: 0.45 }
+                                    }
                                 }
                             }
-                        }
-                        Row {
-                            visible: layoutSearchPrev.res.type === "layout" && layoutSearchPrev.res.id === "master"
-                            anchors.centerIn: parent; spacing: 1
-                            Rectangle { width: 20; height: 37; radius: 2; color: Theme.blue; opacity: 0.4 }
-                            Column {
-                                spacing: 1
-                                Rectangle { width: 16; height: 18; radius: 2; color: Theme.blue; opacity: 0.4 }
-                                Rectangle { width: 16; height: 18; radius: 2; color: Theme.blue; opacity: 0.4 }
+                            Row {
+                                visible: layoutSearchPrev.res.type === "layout" && layoutSearchPrev.res.id === "master"
+                                anchors.centerIn: parent; spacing: 1
+                                Rectangle { width: 20; height: 37; radius: 2; color: Theme.blue; opacity: 0.45 }
+                                Column {
+                                    spacing: 1
+                                    Rectangle { width: 16; height: 18; radius: 2; color: Theme.blue; opacity: 0.45 }
+                                    Rectangle { width: 16; height: 18; radius: 2; color: Theme.blue; opacity: 0.45 }
+                                }
                             }
-                        }
-                        Row {
-                            visible: layoutSearchPrev.res.type === "layout" && layoutSearchPrev.res.id === "scrolling"
-                            anchors.centerIn: parent; spacing: 1
-                            Rectangle { width: 11; height: 37; radius: 2; color: Theme.blue; opacity: 0.4 }
-                            Rectangle { width: 11; height: 37; radius: 2; color: Theme.blue; opacity: 0.4 }
-                            Rectangle { width: 11; height: 37; radius: 2; color: Theme.blue; opacity: 0.4 }
-                        }
-                        Rectangle {
-                            visible: layoutSearchPrev.res.type === "layout" && layoutSearchPrev.res.id === "monocle"
-                            anchors.centerIn: parent
-                            width: 37; height: 37; radius: 2; color: Theme.blue; opacity: 0.4
-                        }
+                            Row {
+                                visible: layoutSearchPrev.res.type === "layout" && layoutSearchPrev.res.id === "scrolling"
+                                anchors.centerIn: parent; spacing: 1
+                                Rectangle { width: 11; height: 37; radius: 2; color: Theme.blue; opacity: 0.45 }
+                                Rectangle { width: 11; height: 37; radius: 2; color: Theme.blue; opacity: 0.45 }
+                                Rectangle { width: 11; height: 37; radius: 2; color: Theme.blue; opacity: 0.45 }
+                            }
+                            Rectangle {
+                                visible: layoutSearchPrev.res.type === "layout" && layoutSearchPrev.res.id === "monocle"
+                                anchors.centerIn: parent
+                                width: 37; height: 37; radius: 2; color: Theme.blue; opacity: 0.45
+                            }
                     }
 
                     // Menu / directory arrow
@@ -2453,47 +2485,34 @@ FloatingWindow {
                         font.pixelSize: 10
                     }
 
+                    // Active indicator for designs, layouts, palettes
+                    Text {
+                        anchors { right: parent.right; rightMargin: modelData.type === "design" || modelData.type === "layout" ? 80 : 20; verticalCenter: parent.verticalCenter }
+                        visible: (modelData.type === "design" && Theme.design === modelData.id) ||
+                                 (modelData.type === "layout" && root.currentLayout === modelData.id) ||
+                                 (modelData.type === "palette" && Theme.name === modelData.id)
+                        text: "*"
+                        color: Theme.green
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: 13
+                    }
+
                     // Design bar preview
-                    Item {
-                        id: designPrev
-                        property var res: modelData
+                    Row {
+                        id: designPrevRow
                         anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
-                        visible: designPrev.res.type === "design"
-                        width: 60; height: 30
+                        spacing: 4
+                        visible: modelData.type === "design"
+                        property int itemIndex: index
 
-                        // Single-bar designs
-                        Rectangle {
-                            anchors.centerIn: parent
-                            visible: designPrev.res.type === "design" && designPrev.res.bars === 1
-                            width: 50
-                            height: Math.max(2, designPrev.res.barH || 0)
-                            radius: 2
-                            color: Theme.subtext; opacity: 0.45
-                        }
-
-                        // Islands design (3 pills)
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 3
-                            visible: designPrev.res.type === "design" && designPrev.res.bars === 3
-                            Rectangle { width: 13; height: designPrev.res.barH || 0; radius: 3; color: Theme.subtext; opacity: 0.45 }
-                            Rectangle { width: 13; height: designPrev.res.barH || 0; radius: 3; color: Theme.subtext; opacity: 0.45 }
-                            Rectangle { width: 13; height: designPrev.res.barH || 0; radius: 3; color: Theme.subtext; opacity: 0.45 }
-                        }
-
-                        // Pills design (5 small circles)
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 2
-                            visible: designPrev.res.type === "design" && designPrev.res.bars === 5
-                            Repeater {
-                                model: 5
-                                Rectangle {
-                                    width: 10
-                                    height: designPrev.res.barH || 0
-                                    radius: (designPrev.res.barH || 0) / 2
-                                    color: Theme.subtext; opacity: 0.45
-                                }
+                        Repeater {
+                            model: designPrevRow.visible ? modelData.bars : 0
+                            Rectangle {
+                                width: modelData.bars === 1 ? 60 : modelData.bars === 5 ? 10 : 18
+                                height: modelData.barH
+                                radius: modelData.bars === 3 ? 4 : modelData.bars === 5 ? modelData.barH / 2 : 2
+                                color: root.selectedSearchIndex === designPrevRow.itemIndex ? Theme.blue : Theme.subtext
+                                opacity: root.selectedSearchIndex === designPrevRow.itemIndex ? 0.7 : 0.35
                             }
                         }
                     }
