@@ -67,15 +67,7 @@ This syncs configs for `hypr`, `kitty`, and `quickshell` to `~/.config/`. Use `-
 ./install.sh --watch
 ```
 
-### 3. Clipboard history daemon
-
-Add this to your shell's autostart or Hyprland's `exec-once` (already included in `hyprland.lua`):
-
-```bash
-wl-paste --watch cliphist store
-```
-
-### 4. Wallpapers
+### 3. Wallpapers
 
 Drop images into `wallpapers/` — they appear immediately in the settings wallpaper picker.
 

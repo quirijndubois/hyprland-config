@@ -74,7 +74,7 @@ FloatingWindow {
         if (page !== "main") activeSubPage = page
         if (page === "bluetooth") btListProc.running = true
         if (page === "layout") layoutQueryProc.running = true
-        if (page === "clipboard") clipListProc.running = true
+        if (page === "clipboard") { clipDaemonProc.running = true; clipListProc.running = true }
         if (page === "system") {
             sysMonitorsProc.running = false
             sysMonitorsProc.running = true
@@ -477,6 +477,13 @@ FloatingWindow {
 
     Process {
         id: clipDecodeProc
+        stdout: StdioCollector {}
+        stderr: StdioCollector {}
+    }
+
+    Process {
+        id: clipDaemonProc
+        command: ["sh", "-c", "pgrep -f 'wl-paste.*cliphist' || wl-paste --watch cliphist store &"]
         stdout: StdioCollector {}
         stderr: StdioCollector {}
     }
@@ -1770,7 +1777,7 @@ FloatingWindow {
                 Text {
                     anchors.centerIn: parent
                     visible: root.clipboardItems.length === 0
-                    text: "no history  —  run: wl-paste --watch cliphist store"
+                    text: "no history yet"
                     color: Theme.subtext
                     font.family: "JetBrains Mono"
                     font.pixelSize: 11
