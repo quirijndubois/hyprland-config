@@ -52,7 +52,7 @@ FloatingWindow {
     property var bluetoothDevices: []
     property string currentLayout: "dwindle"
     property string monitorName: ""
-    readonly property string wallpapersDir: "/home/q/dev/hyprland-config/wallpapers/"
+    readonly property string wallpapersDir: "/home/q/dev/qaskade/wallpapers/"
     property var systemMonitors: []
     property real mouseSensitivity: 0.0
     property bool naturalScroll: true
