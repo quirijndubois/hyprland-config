@@ -309,3 +309,7 @@ hl.bind(mainMod .. " + minus", function()
 end)
 
 hl.bind(mainMod .. " + SHIFT + mouse_up", hl.dsp.exec_cmd("hyprctl keyword cursor:zoom_factor 1"))
+
+-- User-specific settings (not tracked by git, excluded from install.sh sync)
+local _us = os.getenv("HOME") .. "/.config/hypr/user-settings.lua"
+local _f = io.open(_us, "r"); if _f then _f:close(); dofile(_us) end

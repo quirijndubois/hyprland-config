@@ -392,7 +392,22 @@ FloatingWindow {
         stderr: StdioCollector {}
     }
 
-    readonly property string _devLua: "/home/q/dev/hyprland-config/hypr/hyprland.lua"
+    function _writeUserSettings() {
+        const lines = []
+        for (const m of root.systemMonitors)
+            lines.push('hl.monitor({ output = "' + m.name + '", mode = "' + m.width + 'x' + m.height + '", position = "' + m.x + 'x' + m.y + '", scale = ' + m.scale + ' })')
+        const ns = root.naturalScroll ? 'true' : 'false'
+        lines.push('hl.config({ input = { sensitivity = ' + root.mouseSensitivity + ', touchpad = { natural_scroll = ' + ns + ', scroll_factor = ' + root.scrollFactor + ' } } })')
+        const args = lines.map(l => "'" + l + "'").join(' ')
+        return "printf '%s\\n' " + args + " > \"$HOME/.config/hypr/user-settings.lua\""
+    }
+
+    function _rescaleCmd() {
+        let cmd = ""
+        for (const m of root.systemMonitors)
+            cmd += " ; hyprctl eval \"hl.monitor({ output = '" + m.name + "', mode = '" + m.width + "x" + m.height + "', position = '" + m.x + "x" + m.y + "', scale = " + m.scale + " })\""
+        return cmd
+    }
 
     function setMonitorScale(mon, scale) {
         const idx = root.systemMonitors.findIndex(m => m.name === mon.name)
@@ -401,34 +416,17 @@ FloatingWindow {
             arr[idx] = Object.assign({}, arr[idx], { scale: scale })
             root.systemMonitors = arr
         }
-        const s = "" + scale
-        const pat = "'s/\\(output = \"" + mon.name + "\"[^}]*scale = \\)[0-9.]*/\\1" + s + "/'"
-        const evalCmd = "hyprctl eval \"hl.monitor({ output = '" + mon.name + "', mode = '" + mon.width + "x" + mon.height + "', position = '" + mon.x + "x" + mon.y + "', scale = " + s + " })\""
-        sysApplyProc.command = ["sh", "-c",
-            "sed -i " + pat + " '" + root._devLua + "'" +
-            " ; sed -i " + pat + " \"$HOME/.config/hypr/hyprland.lua\"" +
-            " ; " + evalCmd
-        ]
+        const evalCmd = "hyprctl eval \"hl.monitor({ output = '" + mon.name + "', mode = '" + mon.width + "x" + mon.height + "', position = '" + mon.x + "x" + mon.y + "', scale = " + scale + " })\""
+        sysApplyProc.command = ["sh", "-c", root._writeUserSettings() + " ; " + evalCmd]
         sysApplyProc.running = false
         sysApplyProc.running = true
-    }
-
-    function _rescaleCmd() {
-        let cmd = ""
-        for (const m of root.systemMonitors) {
-            const s = "" + m.scale
-            cmd += " ; hyprctl eval \"hl.monitor({ output = '" + m.name + "', mode = '" + m.width + "x" + m.height + "', position = '" + m.x + "x" + m.y + "', scale = " + s + " })\""
-        }
-        return cmd
     }
 
     function setMouseSensitivity(val) {
         val = Math.round(Math.max(-1.0, Math.min(1.0, val)) * 10) / 10
         root.mouseSensitivity = val
-        const pat = "'s/^\\(\\s*sensitivity = \\)[^,]*/\\1" + val + "/'"
         sysApplyProc.command = ["sh", "-c",
-            "sed -i " + pat + " '" + root._devLua + "'" +
-            " ; sed -i " + pat + " \"$HOME/.config/hypr/hyprland.lua\"" +
+            root._writeUserSettings() +
             " ; hyprctl keyword input:sensitivity " + val +
             root._rescaleCmd()
         ]
@@ -438,11 +436,8 @@ FloatingWindow {
 
     function setNaturalScroll(val) {
         root.naturalScroll = val
-        const v = val ? "true" : "false"
-        const pat = "'s/^\\(\\s*natural_scroll = \\)[^,]*/\\1" + v + "/'"
         sysApplyProc.command = ["sh", "-c",
-            "sed -i " + pat + " '" + root._devLua + "'" +
-            " ; sed -i " + pat + " \"$HOME/.config/hypr/hyprland.lua\"" +
+            root._writeUserSettings() +
             " ; hyprctl keyword input:touchpad:natural_scroll " + (val ? 1 : 0) +
             root._rescaleCmd()
         ]
@@ -453,10 +448,8 @@ FloatingWindow {
     function setScrollFactor(val) {
         val = Math.round(Math.max(0.1, Math.min(3.0, val)) * 20) / 20
         root.scrollFactor = val
-        const pat = "'s/^\\(\\s*scroll_factor = \\)[^,]*/\\1" + val + "/'"
         sysApplyProc.command = ["sh", "-c",
-            "sed -i " + pat + " '" + root._devLua + "'" +
-            " ; sed -i " + pat + " \"$HOME/.config/hypr/hyprland.lua\"" +
+            root._writeUserSettings() +
             " ; hyprctl keyword input:touchpad:scroll_factor " + val +
             root._rescaleCmd()
         ]

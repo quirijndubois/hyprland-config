@@ -13,7 +13,7 @@ sync_dir() {
   dest="$CONFIG_DIR/$1"
 
   # Capture rsync output, exclude main-items (user-specific)
-  changes=$(rsync -a --itemize-changes --exclude=main-items "$src/" "$dest/" \
+  changes=$(rsync -a --itemize-changes --exclude=main-items --exclude=user-settings.lua "$src/" "$dest/" \
     | awk '/^[><]f/ { print $2 }')
 
   if [ -n "$changes" ]; then
