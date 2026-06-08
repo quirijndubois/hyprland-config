@@ -1,6 +1,6 @@
-# Hyprland Config
+# Qaskade
 
-A opionated fully-featured [Hyprland](https://hyprland.org) desktop shell powered [Quickshell](https://quickshell.outfoxxed.me/) panel. Keyboard-driven, visually cohesive, and packed with tools.
+A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell](https://quickshell.outfoxxed.me/) panel. Keyboard-driven, visually cohesive, and packed with tools.
 
 ![demo](demo.gif)
 
@@ -87,8 +87,8 @@ paru -S hyprland quickshell-git kitty awww hyprlock hypridle hyprshot hyprpicker
 ### 2. Clone and run the install script
 
 ```bash
-git clone https://github.com/yourusername/hyprland-config.git
-cd hyprland-config
+git clone https://github.com/quirijn/qaskade.git
+cd qaskade
 ./install.sh
 ```
 
