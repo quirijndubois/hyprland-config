@@ -1,6 +1,6 @@
 # Hyprland Config
 
-A fully-featured [Hyprland](https://hyprland.org) desktop powered by a custom [Quickshell](https://quickshell.outfoxxed.me/) panel shell — keyboard-driven, visually cohesive, and packed with tools.
+A opionated fully-featured [Hyprland](https://hyprland.org) desktop shell powered [Quickshell](https://quickshell.outfoxxed.me/) panel. Keyboard-driven, visually cohesive, and packed with tools.
 
 ![demo](demo.gif)
 
