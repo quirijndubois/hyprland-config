@@ -202,15 +202,15 @@ FloatingWindow {
     ]
 
     property var mainItems: [
-        { id: "wallpaper",     label: "wallpaper" },
-        { id: "palette",       label: "palette" },
-        { id: "design",        label: "design" },
-        { id: "layout",        label: "layout" },
-        { id: "apps",          label: "applications" },
-        { id: "bluetooth",     label: "bluetooth" },
-        { id: "clipboard",     label: "clipboard" },
-        { id: "bar",           label: "bar" },
-        { id: "notifications", label: "notifications" },
+        { id: "wallpaper",     label: "wallpaper",     icon: "" },
+        { id: "palette",       label: "palette",       icon: "" },
+        { id: "design",        label: "design",        icon: "" },
+        { id: "layout",        label: "layout",        icon: "" },
+        { id: "apps",          label: "applications",  icon: "" },
+        { id: "bluetooth",     label: "bluetooth",     icon: "" },
+        { id: "clipboard",     label: "clipboard",     icon: "" },
+        { id: "bar",           label: "bar",           icon: "" },
+        { id: "notifications", label: "notifications", icon: "" },
     ]
 
     onVisibleChanged: {
@@ -475,6 +475,16 @@ FloatingWindow {
         clip: true
         focus: true
 
+        property real lastCursorX: -9999
+        property real lastCursorY: -9999
+
+        function hoverMoved(item, mx, my) {
+            const g = item.mapToItem(keyNav, mx, my)
+            if (g.x === lastCursorX && g.y === lastCursorY) return false
+            lastCursorX = g.x; lastCursorY = g.y
+            return true
+        }
+
         property real offset: root.page !== "main" ? 1.0 : 0.0
         Behavior on offset {
             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
@@ -721,7 +731,7 @@ FloatingWindow {
 
                     Row {
                         anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
-                        spacing: 14
+                        spacing: 10
 
                         Text {
                             text: root.selectedIndex === index ? ">" : " "
@@ -729,6 +739,16 @@ FloatingWindow {
                             font.family: "JetBrains Mono"
                             font.pixelSize: 13
                             verticalAlignment: Text.AlignVCenter
+                            width: 12
+                        }
+
+                        Text {
+                            text: modelData.icon || ""
+                            color: Theme.purple
+                            font.family: "Symbols Nerd Font Mono"
+                            font.pixelSize: 14
+                            verticalAlignment: Text.AlignVCenter
+                            width: 20
                         }
 
                         Text {
@@ -752,7 +772,7 @@ FloatingWindow {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         hoverEnabled: true
-                        onEntered: root.selectedIndex = index
+                        onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
                         onClicked: keyNav.activateItem()
                     }
                 }
@@ -872,7 +892,7 @@ FloatingWindow {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onEntered: root.selectedIndex = index
+                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
                             onClicked: keyNav.activateItem()
                         }
                     }
@@ -983,7 +1003,7 @@ FloatingWindow {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onEntered: root.selectedIndex = index
+                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
                             onClicked: keyNav.activateItem()
                         }
                     }
@@ -1108,7 +1128,7 @@ FloatingWindow {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onEntered: root.selectedIndex = index
+                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
                             onClicked: keyNav.activateItem()
                         }
                     }
@@ -1233,7 +1253,7 @@ FloatingWindow {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onEntered: root.selectedIndex = index
+                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
                             onClicked: { Theme.design = modelData.id }
                         }
                     }
@@ -1391,7 +1411,7 @@ FloatingWindow {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onEntered: root.selectedIndex = index
+                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
                             onClicked: root.applyLayout(modelData.id)
                         }
                     }
@@ -1515,7 +1535,7 @@ FloatingWindow {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onEntered: root.selectedIndex = index
+                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
                             onClicked: root.toggleBluetooth(modelData)
                         }
                     }
@@ -1622,7 +1642,7 @@ FloatingWindow {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onEntered: root.selectedIndex = index
+                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
                             onClicked: { root.copyClipboardItem(modelData.line); root.closeRequested() }
                         }
                     }
@@ -1729,7 +1749,7 @@ FloatingWindow {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onEntered: root.selectedIndex = index
+                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
                             onClicked: root.toggleBarModule(modelData.id)
                         }
                     }
@@ -1921,7 +1941,7 @@ FloatingWindow {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onEntered: root.selectedIndex = index
+                            onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedIndex = index }
                         }
                     }
                 }
@@ -2250,7 +2270,7 @@ FloatingWindow {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         hoverEnabled: true
-                        onEntered: root.selectedSearchIndex = index
+                        onPositionChanged: mouse => { if (keyNav.hoverMoved(this, mouse.x, mouse.y)) root.selectedSearchIndex = index }
                         onClicked: keyNav.activateSearchItem()
                     }
                 }

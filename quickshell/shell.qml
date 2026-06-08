@@ -9,6 +9,7 @@ ShellRoot {
 
     property bool settingsOpen: false
     property string requestedPage: "main"
+    property bool sessionLocked: false
 
     IpcHandler {
         target: "settings"
@@ -22,6 +23,20 @@ ShellRoot {
         target: "settings-apps"
 
         function open() { root.requestedPage = "apps"; root.settingsOpen = true }
+    }
+
+    IpcHandler {
+        target: "lock"
+
+        function lock() {
+            root.sessionLocked = true
+            lockScreen.lock()
+        }
+    }
+
+    LockScreen {
+        id: lockScreen
+        onLockReleased: root.sessionLocked = false
     }
 
     Process {
