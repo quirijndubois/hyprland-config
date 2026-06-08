@@ -296,19 +296,19 @@ hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), { locked = tru
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true })
 
 -- Cursor zoom controls
-hl.bind(mainMod .. " + equal", function()
-	local cmd =
-		[[hyprctl keyword cursor:zoom_factor "$(hyprctl getoption cursor:zoom_factor | awk 'NR==1 {factor = $2; if (factor < 1) {factor = 1}; print factor * 1.25}')"]]
-	hl.exec_cmd(cmd)
-end)
+local ZOOM_STEP = 0.25
+local MAX_ZOOM = 3.0
+local MIN_ZOOM = 1.0
 
-hl.bind(mainMod .. " + minus", function()
-	local cmd =
-		[[hyprctl keyword cursor:zoom_factor "$(hyprctl getoption cursor:zoom_factor | awk 'NR==1 {factor = $2; if (factor < 1) {factor = 1}; print factor / 1.25}')"]]
-	hl.exec_cmd(cmd)
-end)
+local function zoom(offset)
+	local current = hl.get_config("cursor.zoom_factor") or 1.0
+	current = math.max(MIN_ZOOM, math.min(MAX_ZOOM, current + offset))
+	hl.config({ cursor = { zoom_factor = current } })
+end
 
-hl.bind(mainMod .. " + SHIFT + mouse_up", hl.dsp.exec_cmd("hyprctl keyword cursor:zoom_factor 1"))
+hl.bind(mainMod .. " + equal", function() zoom(ZOOM_STEP) end, { repeating = true })
+hl.bind(mainMod .. " + minus", function() zoom(-ZOOM_STEP) end, { repeating = true })
+hl.bind(mainMod .. " + SHIFT + mouse_up", function() zoom(0) end)
 
 -- User-specific settings (not tracked by git, excluded from install.sh sync)
 local _us = os.getenv("HOME") .. "/.config/hypr/user-settings.lua"

@@ -1,25 +1,48 @@
 # Hyprland Config
 
-A personal [Hyprland](https://hyprland.org) desktop setup with a custom [Quickshell](https://quickshell.outfoxxed.me/) shell — keyboard-driven, visually cohesive, and easy to tweak.
+A fully-featured [Hyprland](https://hyprland.org) desktop powered by a custom [Quickshell](https://quickshell.outfoxxed.me/) panel shell — keyboard-driven, visually cohesive, and packed with tools.
 
 ![demo](demo.gif)
 
 ## Features
 
-- **Quickshell bar** — modular panel with workspaces, system stats (CPU, memory, battery), clock, audio, network, Bluetooth, and system tray
-- **Notification system** — quickshell acts as the D-Bus notification daemon. Incoming notifications animate the center workspace pill: workspace numbers fade out, the pill widens, and the app name + summary appear for 5 seconds before fading back. Hover the workspace section to see a popup with the 5 most recent notifications (with per-item dismiss and clear-all). Full history is in the settings overlay under *notifications*.
-- **Settings overlay** — press `Alt+S` to open a floating settings window with fuzzy search across wallpapers, color palettes, bar designs, layouts, and apps. Reorder the main menu with `Shift+Up`/`Shift+Down` (persisted across restarts)
-- **Filesystem browser** — type any absolute path (e.g. `/home/q/`) in the fuzzy finder to list that directory; navigate into subdirectories with Enter, open files with `xdg-open`, backspace to go back up
-- **Math evaluator** — type an arithmetic expression (`5 * (3 + 2)`, `2^16`, `(100 - 32) / 1.8`) to evaluate it inline; press Enter to copy the result to the clipboard
-- **Web search fallback** — if the fuzzy search returns no results, a single entry appears to open the query in DuckDuckGo
-- **12 color palettes** — Catppuccin, Tokyo Night, Gruvbox, Nord, Dracula, Rose Pine, One Dark, Everforest, Solarized, and more — switch on the fly
-- **8 bar designs** — default, compact, islands (floating pills), pills (per-module pill chips on a transparent bar), bold, minimal, clean (sans-serif), and hacker
-- **4 Hyprland layouts** — dwindle, master, spiral, and split — toggleable from settings
-- **Wallpaper manager** — browse and apply wallpapers with smooth `awww` transitions, per-monitor support
-- **App launcher** — browse and launch apps from the settings overlay
-- **Bluetooth manager** — pair, connect, and disconnect devices from settings
-- **Clipboard history** — browse and re-copy previous clipboard entries via the settings overlay; also searchable from the fuzzy finder
-- **Lua config** — modern Hyprland Lua format with custom bezier animations, blur, shadows, and rounded corners
+### Custom Quickshell Panel
+- **Modular bar** — workspaces, clock, battery, CPU (per-core), GPU (NVIDIA), memory, audio, network, Bluetooth, MPRIS music player, system tray, and sleep inhibit — each independently toggleable
+- **Hover popups** — every module shows a rich info popup on hover (CPU per-core chart + top processes, GPU utilization + VRAM, memory bar + top processes, per-app audio sliders with live peak meters, battery time remaining, music controls with seek bar, network IP/SSID, Bluetooth device list, and more)
+- **Notification center** — the workspace pill animates on incoming notifications (widens, shows app + summary for 5s). Hover it for the 5 most recent notifications with per-item dismiss and clear-all. Full history in settings.
+- **MPRIS music visualization** — animated dancing bars when music plays, with progress bar, seek, and transport controls
+- **System tray** — Discord, Telegram, and any StatusNotifierItem app
+
+### Settings Overlay (`Alt+S`)
+- **Fuzzy search** across wallpapers, palettes, designs, layouts, apps, Bluetooth devices, clipboard history, bar module toggles, and system settings
+- **Filesystem browser** — type any absolute path to browse directories, open files with `xdg-open`
+- **Math evaluator** — type `5 * (3 + 2)`, `2^16`, `(100 - 32) / 1.8` — evaluates inline, copies result with Enter
+- **Web search fallback** — no results? Opens your query in DuckDuckGo
+- **Keyboard-driven** — full navigation with arrows, Enter, Escape; reorder the main menu with `Shift+Up`/`Shift+Down` (persisted)
+
+### Theming & Layout
+- **12 color palettes** — Catppuccin (mocha, macchiato, frappe, latte), Tokyo Night, Gruvbox, Nord, Dracula, Rose Pine, One Dark, Everforest, Solarized Dark — switch instantly
+- **8 bar designs** — default, compact, islands (floating pills), pills (per-module chips on a transparent bar), bold, minimal, clean (sans-serif), hacker
+- **4 Hyprland layouts** — dwindle, master, scrolling, monocle — toggle from settings, applies live
+- **Custom bezier animations** — 5 hand-tuned curves for windows, workspaces, fade, and layers
+
+### System Management
+- **Wallpaper manager** — browse and apply images with smooth `awww` transitions (fade, slide, wipe, wave, grow, and more), per-monitor
+- **App launcher** — browse `.desktop` entries with icons, launch from the settings overlay
+- **Bluetooth manager** — pair, connect, disconnect devices — all from settings
+- **Clipboard history** — browse and re-copy entries via `cliphist`; searchable from fuzzy finder
+- **System settings** — monitor scale, mouse sensitivity, natural scroll, scroll factor, font size — applied live via `hyprctl` and persisted
+
+### Lock Screen
+- **Wayland session lock** — centered clock + date, password auth via `unix_chkpwd`, blur background. Lock with `Alt+Delete`.
+
+### Input & Gestures
+- **3-finger swipe** — horizontal gesture switches workspaces
+- **Cursor zoom** — `Alt+=` / `Alt+-` to zoom, `Alt+Shift+MouseUp` to reset
+- **Multimedia keys** — volume, brightness, mic mute, media playback
+
+### Config
+- **Hyprland Lua** — modern `hyprland.lua` with custom bezier curves, blur, shadows, rounded corners, and user-settings override (`~/.config/hypr/user-settings.lua` not tracked by git)
 
 ## Keybinds
 
@@ -33,11 +56,19 @@ A personal [Hyprland](https://hyprland.org) desktop setup with a custom [Quicksh
 | `Alt + V` | Toggle float |
 | `Alt + E` | File manager (dolphin) |
 | `Alt + T` | Browser (firefox) |
+| `Alt + Delete` | Lock screen |
 | `Alt + Tab` | Cycle workspaces |
 | `Alt + Shift + Tab` | Cycle workspaces backward |
 | `Alt + 1–9 / 0` | Switch to workspace |
 | `Alt + Shift + 1–9 / 0` | Move window to workspace |
+| `Alt + H / J / K / L` | Focus left / down / up / right |
+| `Alt + Shift + H / J / K / L` | Move window |
+| `Alt + Ctrl + H / J / K / L` | Resize window |
+| `Alt + I` | Toggle split layout |
+| `Alt + C` | Color picker (hyprpicker) |
 | `Alt + Shift + C` | Region screenshot |
+| `Alt + = / -` | Zoom in / out |
+| `Alt + Shift + MouseUp` | Reset zoom |
 
 ## Installation
 
