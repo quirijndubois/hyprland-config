@@ -215,7 +215,7 @@ hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd("quickshell ipc call settings-apps open"))
 -- hl.bind(mainMod .. " + I",        hl.dsp.layout("togglesplit"))
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(browser))
-hl.bind(mainMod .. " + Delete",   hl.dsp.exec_cmd("qs ipc call lock lock"))
+hl.bind(mainMod .. " + Delete", hl.dsp.exec_cmd("qs ipc call lock lock"))
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen())
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("hyprpicker -a"))
 hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("hyprshot -m region"))
@@ -243,14 +243,15 @@ hl.bind(mainMod .. " + SHIFT + J", hl.dsp.window.move({ direction = "down" }))
 
 -- Resize windows
 hl.bind(mainMod .. " + CTRL + H", hl.dsp.window.resize({ x = -50, y = 0, relative = true }))
-
 hl.bind(mainMod .. " + CTRL + L", hl.dsp.window.resize({ x = 50, y = 0, relative = true }))
-
 hl.bind(mainMod .. " + CTRL + K", hl.dsp.window.resize({ x = 0, y = -50, relative = true }))
-
 hl.bind(mainMod .. " + CTRL + J", hl.dsp.window.resize({ x = 0, y = 50, relative = true }))
-
 hl.bind(mainMod .. " + I", hl.dsp.layout("togglesplit"))
+
+hl.bind(mainMod .. " + CTRL + left", hl.dsp.window.resize({ x = -50, y = 0, relative = true }))
+hl.bind(mainMod .. " + CTRL + right", hl.dsp.window.resize({ x = 50, y = 0, relative = true }))
+hl.bind(mainMod .. " + CTRL + up", hl.dsp.window.resize({ x = 0, y = -50, relative = true }))
+hl.bind(mainMod .. " + CTRL + down", hl.dsp.window.resize({ x = 0, y = 50, relative = true }))
 
 -- Switch workspaces and move windows to workspaces
 for i = 1, 9 do
@@ -306,10 +307,20 @@ local function zoom(offset)
 	hl.config({ cursor = { zoom_factor = current } })
 end
 
-hl.bind(mainMod .. " + equal", function() zoom(ZOOM_STEP) end, { repeating = true })
-hl.bind(mainMod .. " + minus", function() zoom(-ZOOM_STEP) end, { repeating = true })
-hl.bind(mainMod .. " + SHIFT + mouse_up", function() zoom(0) end)
+hl.bind(mainMod .. " + equal", function()
+	zoom(ZOOM_STEP)
+end, { repeating = true })
+hl.bind(mainMod .. " + minus", function()
+	zoom(-ZOOM_STEP)
+end, { repeating = true })
+hl.bind(mainMod .. " + SHIFT + mouse_up", function()
+	zoom(0)
+end)
 
 -- User-specific settings (not tracked by git, excluded from install.sh sync)
 local _us = os.getenv("HOME") .. "/.config/hypr/user-settings.lua"
-local _f = io.open(_us, "r"); if _f then _f:close(); dofile(_us) end
+local _f = io.open(_us, "r")
+if _f then
+	_f:close()
+	dofile(_us)
+end
