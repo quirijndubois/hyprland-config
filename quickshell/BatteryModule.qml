@@ -8,27 +8,30 @@ BarText {
     property var screen: null
     property var device: UPower.displayDevice
 
+    function getBatteryPct(dev) {
+        if (!dev || !dev.isPresent) return -1
+        const raw = dev.percentage
+        // quickshell exposes percentage as 0.0–1.0
+        if (raw > 0 && raw <= 1) return Math.round(raw * 100)
+        if (raw > 1) return Math.round(raw)
+        // fallback: calculate from energy properties
+        if (dev.energyCapacity > 0) return Math.round((dev.energy / dev.energyCapacity) * 100)
+        return 0
+    }
+
     text: {
-        if (!device || !device.isPresent) return "bat --%"
-        let pct = device.percentage
-        if (pct === undefined || pct === null || pct === 0) {
-            if (device.energy !== undefined && device.energyFull !== undefined && device.energyFull > 0) {
-                pct = Math.round((device.energy / device.energyFull) * 100)
-            } else {
-                pct = 0
-            }
-        } else {
-            pct = Math.round(pct)
-        }
+        const pct = getBatteryPct(device)
+        if (pct < 0) return "bat --%"
         const state = device.state
-        const prefix = state === 1 ? "+" : state === 4 || state === 5 ? "=" : ""
+        const prefix = state === UPowerDeviceState.Charging ? "+" :
+                       (state === UPowerDeviceState.FullyCharged || state === UPowerDeviceState.PendingCharge) ? "=" : ""
         return "bat " + prefix + pct + "%"
     }
 
     property string timeText: {
         if (!device || !device.isPresent) return ""
         const s = device.state
-        if (s === 1) {
+        if (s === UPowerDeviceState.Charging) {
             const secs = device.timeToFull
             if (secs <= 0 || secs > 86400) return "charging"
             const h = Math.floor(secs / 3600)
@@ -61,18 +64,8 @@ BarText {
                 spacing: 8
                 Text {
                     text: {
-                        if (!root.device || !root.device.isPresent) return "--%"
-                        let pct = root.device.percentage
-                        if (pct === undefined || pct === null || pct === 0) {
-                            if (root.device.energy !== undefined && root.device.energyFull !== undefined && root.device.energyFull > 0) {
-                                pct = Math.round((root.device.energy / root.device.energyFull) * 100)
-                            } else {
-                                pct = 0
-                            }
-                        } else {
-                            pct = Math.round(pct)
-                        }
-                        return pct + "%"
+                        const pct = root.getBatteryPct(root.device)
+                        return pct < 0 ? "--%" : pct + "%"
                     }
                     color: Theme.green
                     font.family: Theme.barFontFamily
@@ -85,7 +78,8 @@ BarText {
                     text: {
                         if (!root.device || !root.device.isPresent) return ""
                         const s = root.device.state
-                        return s === 1 ? "charging" : s === 4 || s === 5 ? "full" : "discharging"
+                        return s === UPowerDeviceState.Charging ? "charging" :
+                               (s === UPowerDeviceState.FullyCharged || s === UPowerDeviceState.PendingCharge) ? "full" : "discharging"
                     }
                     color: Theme.subtext
                     font.family: Theme.barFontFamily
@@ -100,34 +94,11 @@ BarText {
                 color: Theme.border
 
                 Rectangle {
-                    width: {
-                        if (!root.device || !root.device.isPresent) return 0
-                        let pct = root.device.percentage
-                        if (pct === undefined || pct === null || pct === 0) {
-                            if (root.device.energy !== undefined && root.device.energyFull !== undefined && root.device.energyFull > 0) {
-                                pct = (root.device.energy / root.device.energyFull) * 100
-                            } else {
-                                pct = 0
-                            }
-                        }
-                        return parent.parent.width * Math.min(1, pct / 100)
-                    }
+                    property int pct: root.getBatteryPct(root.device)
+                    width: pct < 0 ? 0 : parent.parent.width * Math.min(1, pct / 100)
                     height: parent.height
                     radius: parent.radius
-                    color: {
-                        if (!root.device) return Theme.green
-                        let pct = root.device.percentage
-                        if (pct === undefined || pct === null || pct === 0) {
-                            if (root.device.energy !== undefined && root.device.energyFull !== undefined && root.device.energyFull > 0) {
-                                pct = Math.round((root.device.energy / root.device.energyFull) * 100)
-                            } else {
-                                pct = 0
-                            }
-                        } else {
-                            pct = Math.round(pct)
-                        }
-                        return pct < 20 ? Theme.red : pct < 40 ? Theme.yellow : Theme.green
-                    }
+                    color: pct < 20 ? Theme.red : pct < 40 ? Theme.yellow : Theme.green
                     Behavior on width { NumberAnimation { duration: 400 } }
                 }
             }
