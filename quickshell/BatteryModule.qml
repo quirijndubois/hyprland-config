@@ -10,7 +10,16 @@ BarText {
 
     text: {
         if (!device || !device.isPresent) return "bat --%"
-        const pct = Math.round(device.percentage)
+        let pct = device.percentage
+        if (pct === undefined || pct === null || pct === 0) {
+            if (device.energy !== undefined && device.energyFull !== undefined && device.energyFull > 0) {
+                pct = Math.round((device.energy / device.energyFull) * 100)
+            } else {
+                pct = 0
+            }
+        } else {
+            pct = Math.round(pct)
+        }
         const state = device.state
         const prefix = state === 1 ? "+" : state === 4 || state === 5 ? "=" : ""
         return "bat " + prefix + pct + "%"
@@ -51,7 +60,20 @@ BarText {
             Row {
                 spacing: 8
                 Text {
-                    text: root.device && root.device.isPresent ? Math.round(root.device.percentage) + "%" : "--%"
+                    text: {
+                        if (!root.device || !root.device.isPresent) return "--%"
+                        let pct = root.device.percentage
+                        if (pct === undefined || pct === null || pct === 0) {
+                            if (root.device.energy !== undefined && root.device.energyFull !== undefined && root.device.energyFull > 0) {
+                                pct = Math.round((root.device.energy / root.device.energyFull) * 100)
+                            } else {
+                                pct = 0
+                            }
+                        } else {
+                            pct = Math.round(pct)
+                        }
+                        return pct + "%"
+                    }
                     color: Theme.green
                     font.family: Theme.barFontFamily
                     font.pixelSize: 20
@@ -78,11 +100,32 @@ BarText {
                 color: Theme.border
 
                 Rectangle {
-                    width: parent.parent.width * Math.min(1, (root.device && root.device.isPresent ? root.device.percentage / 100 : 0))
+                    width: {
+                        if (!root.device || !root.device.isPresent) return 0
+                        let pct = root.device.percentage
+                        if (pct === undefined || pct === null || pct === 0) {
+                            if (root.device.energy !== undefined && root.device.energyFull !== undefined && root.device.energyFull > 0) {
+                                pct = (root.device.energy / root.device.energyFull) * 100
+                            } else {
+                                pct = 0
+                            }
+                        }
+                        return parent.parent.width * Math.min(1, pct / 100)
+                    }
                     height: parent.height
                     radius: parent.radius
                     color: {
-                        const pct = root.device ? root.device.percentage : 0
+                        if (!root.device) return Theme.green
+                        let pct = root.device.percentage
+                        if (pct === undefined || pct === null || pct === 0) {
+                            if (root.device.energy !== undefined && root.device.energyFull !== undefined && root.device.energyFull > 0) {
+                                pct = Math.round((root.device.energy / root.device.energyFull) * 100)
+                            } else {
+                                pct = 0
+                            }
+                        } else {
+                            pct = Math.round(pct)
+                        }
                         return pct < 20 ? Theme.red : pct < 40 ? Theme.yellow : Theme.green
                     }
                     Behavior on width { NumberAnimation { duration: 400 } }
