@@ -23,6 +23,14 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "clipboard"
+
+        function copied() {
+            root.clipboardCopied()
+        }
+    }
+
+    IpcHandler {
         target: "settings-apps"
 
         function open() { root.requestedPage = "apps"; root.settingsOpen = true }
@@ -44,6 +52,11 @@ ShellRoot {
 
     Process {
         command: ["sh", "-c", "pgrep -x awww-daemon > /dev/null || awww-daemon"]
+        running: true
+    }
+
+    Process {
+        command: ["sh", "-c", "last=''; while sleep 0.5; do current=$(wl-paste 2>/dev/null); if [ \"$current\" != \"$last\" ] && [ -n \"$current\" ]; then sleep 0.05; if [ \"$(wl-paste 2>/dev/null)\" = \"$current\" ]; then quickshell ipc -c default call clipboard copied 2>/dev/null || true; last=\"$current\"; fi; fi; done"]
         running: true
     }
 
@@ -265,7 +278,7 @@ ShellRoot {
                         }
                         spacing: 8
                         opacity: barStrip.clipboardActive ? 1.0 : 0.0
-                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.InOutQuad } }
+                        Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
 
                         Text {
                             text: "✓"

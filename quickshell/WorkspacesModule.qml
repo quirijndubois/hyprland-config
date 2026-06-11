@@ -23,6 +23,7 @@ Item {
 
             delegate: Item {
                 required property var modelData
+                required property int index
                 width: 24
                 height: Theme.barFontSize + 8
 
@@ -30,15 +31,20 @@ Item {
 
                 property bool isFocused: modelData.focused
 
+                function updateHighlightPosition() {
+                    const itemX = row.x + index * (24 + row.spacing)
+                    root.highlightX = itemX
+                }
+
                 onIsFocusedChanged: {
                     if (isFocused) {
-                        Qt.callLater(() => root.highlightX = mapToItem(root, 0, 0).x)
+                        Qt.callLater(() => updateHighlightPosition())
                     }
                 }
 
                 Component.onCompleted: {
                     if (modelData.focused) {
-                        Qt.callLater(() => root.highlightX = mapToItem(root, 0, 0).x)
+                        Qt.callLater(() => updateHighlightPosition())
                     }
                 }
 
