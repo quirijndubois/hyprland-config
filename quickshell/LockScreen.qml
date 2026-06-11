@@ -60,7 +60,7 @@ Item {
                     onStarted: write(surface.passwordInput + "\n")
                     onExited: function(exitCode, exitStatus) {
                         if (exitCode === 0) {
-                            wlLock.locked = false
+                            exitAnim.start()
                         } else {
                             surface.authFailed = true
                             surface.passwordInput = ""
@@ -108,8 +108,44 @@ Item {
                     Rectangle { anchors.fill: parent; color: Theme.base }
 
                     Column {
+                        id: contentCol
                         anchors.centerIn: parent
                         spacing: 0
+
+                        opacity: 0
+                        transform: Translate { id: contentSlide; y: 50 }
+                        Component.onCompleted: enterAnim.start()
+
+                        SequentialAnimation {
+                            id: enterAnim
+                            ParallelAnimation {
+                                NumberAnimation {
+                                    target: contentSlide; property: "y"
+                                    from: 50; to: 0
+                                    duration: 420; easing.type: Easing.OutExpo
+                                }
+                                NumberAnimation {
+                                    target: contentCol; property: "opacity"
+                                    from: 0; to: 1
+                                    duration: 340; easing.type: Easing.OutCubic
+                                }
+                            }
+                        }
+
+                        SequentialAnimation {
+                            id: exitAnim
+                            ParallelAnimation {
+                                NumberAnimation {
+                                    target: contentSlide; property: "y"
+                                    to: -60; duration: 260; easing.type: Easing.InCubic
+                                }
+                                NumberAnimation {
+                                    target: contentCol; property: "opacity"
+                                    to: 0; duration: 200; easing.type: Easing.InCubic
+                                }
+                            }
+                            ScriptAction { script: wlLock.locked = false }
+                        }
 
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter

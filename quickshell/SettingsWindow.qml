@@ -13,10 +13,40 @@ FloatingWindow {
 
     signal closeRequested()
 
+    property bool focusGrabReady: false
+
     HyprlandFocusGrab {
         windows: [root]
-        active: root.visible
+        active: root.focusGrabReady
         onCleared: root.closeRequested()
+    }
+
+    Timer {
+        id: focusGrabTimer
+        interval: 80
+        onTriggered: root.focusGrabReady = true
+    }
+
+    Timer {
+        id: moveMonitorTimer
+        interval: 60
+        onTriggered: {
+            const mon = root.monitorName
+            if (mon) {
+                moveMonitorProc.command = ["sh", "-c",
+                    "hyprctl dispatch focuswindow 'title:Quickshell Settings'" +
+                    " ; hyprctl dispatch movewindow 'mon:" + mon + "'" +
+                    " ; hyprctl dispatch focuswindow 'title:Quickshell Settings'"]
+                moveMonitorProc.running = false
+                moveMonitorProc.running = true
+            }
+        }
+    }
+
+    Process {
+        id: moveMonitorProc
+        stdout: StdioCollector {}
+        stderr: StdioCollector {}
     }
 
     property string page: "main"
@@ -268,6 +298,13 @@ FloatingWindow {
             selectedIndex = 0
             searchQuery = ""
             Qt.callLater(() => keyNav.forceActiveFocus())
+            focusGrabReady = false
+            focusGrabTimer.restart()
+            moveMonitorTimer.restart()
+        } else {
+            focusGrabReady = false
+            focusGrabTimer.stop()
+            moveMonitorTimer.stop()
         }
     }
 
@@ -517,6 +554,22 @@ FloatingWindow {
         repeat: true
         running: root.page === "clipboard"
         onTriggered: if (!clipListProc.running) clipListProc.running = true
+    }
+
+    Timer {
+        id: clearAllTimer
+        onTriggered: Notifications.clearAll()
+    }
+
+    function clearNotificationsAnimated() {
+        const count = notifListView.count
+        if (count === 0) return
+        for (let i = 0; i < count; i++) {
+            const item = notifListView.itemAtIndex(i)
+            if (item) item.animateOut(i * 55)
+        }
+        clearAllTimer.interval = count * 55 + 260
+        clearAllTimer.restart()
     }
 
     function copyClipboardItem(line) {
@@ -1504,6 +1557,11 @@ FloatingWindow {
                             font.family: "JetBrains Mono"
                             font.pixelSize: sf - 2
                             verticalAlignment: Text.AlignVCenter
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.clearNotificationsAnimated()
+                            }
                         }
                     }
                 }
@@ -1531,13 +1589,38 @@ FloatingWindow {
                         required property var modelData
                         required property int index
 
+                        property bool _isClearAll: false
+
+                        function dismiss() {
+                            if (!notifExitAnim.running) {
+                                _isClearAll = false
+                                notifExitAnim.start()
+                            }
+                        }
+
+                        function animateOut(delay) {
+                            _isClearAll = true
+                            notifExitDelayTimer.interval = Math.max(1, delay)
+                            notifExitDelayTimer.restart()
+                        }
+
+                        Timer {
+                            id: notifExitDelayTimer
+                            onTriggered: notifExitAnim.start()
+                        }
+
+                        SequentialAnimation {
+                            id: notifExitAnim
+                            ParallelAnimation {
+                                NumberAnimation { target: notifDelegate; property: "x"; to: 520; duration: 220; easing.type: Easing.InCubic }
+                                NumberAnimation { target: notifDelegate; property: "opacity"; to: 0; duration: 170; easing.type: Easing.InCubic }
+                            }
+                            ScriptAction { script: { if (!notifDelegate._isClearAll) Notifications.dismiss(notifDelegate.modelData.id) } }
+                        }
+
                         width: notifListView.width
                         height: 64
                         color: root.selectedIndex === index ? Theme.border : "transparent"
-
-                        function dismiss() {
-                            Notifications.dismiss(modelData.id)
-                        }
 
                         // Urgency bar on left edge
                         Rectangle {
@@ -1596,6 +1679,11 @@ FloatingWindow {
                             color: root.selectedIndex === index ? Theme.red : Theme.subtext
                             font.family: "JetBrains Mono"
                             font.pixelSize: sf
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: notifDelegate.dismiss()
+                            }
                         }
 
                     }

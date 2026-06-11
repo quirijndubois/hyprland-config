@@ -137,6 +137,7 @@ Item {
                     model: Notifications.history
 
                     delegate: Rectangle {
+                        id: popupNotifItem
                         required property var modelData
                         required property int index
 
@@ -145,6 +146,35 @@ Item {
                         height: notifItemCol.implicitHeight + 12
                         radius: 4
                         color: Theme.base
+
+                        property bool _isClearAll: false
+
+                        function dismiss() {
+                            if (!popupExitAnim.running) {
+                                _isClearAll = false
+                                popupExitAnim.start()
+                            }
+                        }
+
+                        function animateOut(delay) {
+                            _isClearAll = true
+                            popupExitDelayTimer.interval = Math.max(1, delay)
+                            popupExitDelayTimer.restart()
+                        }
+
+                        Timer {
+                            id: popupExitDelayTimer
+                            onTriggered: popupExitAnim.start()
+                        }
+
+                        SequentialAnimation {
+                            id: popupExitAnim
+                            ParallelAnimation {
+                                NumberAnimation { target: popupNotifItem; property: "x"; to: 160; duration: 180; easing.type: Easing.InCubic }
+                                NumberAnimation { target: popupNotifItem; property: "opacity"; to: 0; duration: 140; easing.type: Easing.InCubic }
+                            }
+                            ScriptAction { script: { if (!popupNotifItem._isClearAll) Notifications.dismiss(popupNotifItem.modelData.id) } }
+                        }
 
                         Rectangle {
                             anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
@@ -196,7 +226,7 @@ Item {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: Notifications.dismiss(modelData.id)
+                                onClicked: popupNotifItem.dismiss()
                             }
                         }
                     }
@@ -213,8 +243,23 @@ Item {
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: Notifications.clearAll()
+                    onClicked: {
+                        const count = popupNotifRep.count
+                        for (let i = 0; i < count; i++) {
+                            const item = popupNotifRep.itemAt(i)
+                            if (item && item.visible) item.animateOut((count - 1 - i) * 50)
+                        }
+                        Qt.callLater(() => {
+                            popupClearTimer.interval = count * 50 + 220
+                            popupClearTimer.restart()
+                        })
+                    }
                 }
+            }
+
+            Timer {
+                id: popupClearTimer
+                onTriggered: Notifications.clearAll()
             }
         }
     }
