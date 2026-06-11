@@ -487,8 +487,8 @@ FloatingWindow {
         val = Math.round(Math.max(-1.0, Math.min(1.0, val)) * 10) / 10
         root.mouseSensitivity = val
         sysApplyProc.command = ["sh", "-c",
+            "hyprctl eval \"hl.config({ input = { sensitivity = " + val + " } })\" && " +
             root._writeUserSettings() +
-            " ; hyprctl keyword input:sensitivity " + val +
             root._rescaleCmd()
         ]
         sysApplyProc.running = false
@@ -498,8 +498,8 @@ FloatingWindow {
     function setNaturalScroll(val) {
         root.naturalScroll = val
         sysApplyProc.command = ["sh", "-c",
+            "hyprctl eval \"hl.config({ input = { touchpad = { natural_scroll = " + (val ? "true" : "false") + " } } })\" && " +
             root._writeUserSettings() +
-            " ; hyprctl keyword input:touchpad:natural_scroll " + (val ? 1 : 0) +
             root._rescaleCmd()
         ]
         sysApplyProc.running = false
@@ -510,8 +510,8 @@ FloatingWindow {
         val = Math.round(Math.max(0.1, Math.min(3.0, val)) * 20) / 20
         root.scrollFactor = val
         sysApplyProc.command = ["sh", "-c",
+            "hyprctl eval \"hl.config({ input = { touchpad = { scroll_factor = " + val + " } } })\" && " +
             root._writeUserSettings() +
-            " ; hyprctl keyword input:touchpad:scroll_factor " + val +
             root._rescaleCmd()
         ]
         sysApplyProc.running = false
