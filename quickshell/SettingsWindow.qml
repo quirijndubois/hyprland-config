@@ -405,6 +405,12 @@ FloatingWindow {
     Process { id: saveItemsProc }
     Process { id: clipProc; stdout: StdioCollector {} }
 
+    signal clipboardCopyTriggered()
+
+    function notifyClipboardCopy() {
+        root.clipboardCopyTriggered()
+    }
+
     Process {
         id: sysMonitorsProc
         command: ["sh", "-c", "hyprctl -j monitors 2>/dev/null"]
@@ -576,6 +582,7 @@ FloatingWindow {
         clipDecodeProc.command = ["sh", "-c", "printf '%s\\n' \"$1\" | cliphist decode | wl-copy", "--", line]
         clipDecodeProc.running = false
         clipDecodeProc.running = true
+        root.notifyClipboardCopy()
     }
 
     Process {
@@ -972,6 +979,7 @@ FloatingWindow {
                 clipProc.command = ["sh", "-c", "printf '%s' '" + result.label + "' | wl-copy"]
                 clipProc.running = false
                 clipProc.running = true
+                root.notifyClipboardCopy()
                 root.searchQuery = ""
                 return
             }

@@ -12,6 +12,8 @@ ShellRoot {
     property string requestedPage: "main"
     property bool sessionLocked: false
 
+    signal clipboardCopied()
+
     IpcHandler {
         target: "settings"
 
@@ -46,9 +48,17 @@ ShellRoot {
     }
 
     SettingsWindow {
+        id: settingsWindow
         visible: root.settingsOpen
         requestedPage: root.requestedPage
         onCloseRequested: { root.requestedPage = "main"; root.settingsOpen = false }
+    }
+
+    Connections {
+        target: settingsWindow
+        function onClipboardCopyTriggered() {
+            root.clipboardCopied()
+        }
     }
 
     Variants {
@@ -89,10 +99,18 @@ ShellRoot {
                     property string notifSummary: ""
                     property int notifUrgency: 1
 
+                    property bool clipboardActive: false
+
                     Timer {
                         id: notifTimer
                         interval: 5000
                         onTriggered: barStrip.notifActive = false
+                    }
+
+                    Timer {
+                        id: clipboardTimer
+                        interval: 2000
+                        onTriggered: barStrip.clipboardActive = false
                     }
 
                     Connections {
@@ -103,6 +121,18 @@ ShellRoot {
                             barStrip.notifUrgency = n.urgency
                             barStrip.notifActive = true
                             notifTimer.restart()
+                        }
+                    }
+
+                    function showClipboardNotif() {
+                        barStrip.clipboardActive = true
+                        clipboardTimer.restart()
+                    }
+
+                    Connections {
+                        target: root
+                        function onClipboardCopied() {
+                            barStrip.showClipboardNotif()
                         }
                     }
 
@@ -160,8 +190,8 @@ ShellRoot {
                     Rectangle {
                         visible: Theme.design === "islands" || Theme.design === "pills"
                         anchors { horizontalCenter: parent.horizontalCenter; verticalCenter: parent.verticalCenter }
-                        width: barStrip.notifActive ? notifCenterRow.implicitWidth + 32 : centerRow.implicitWidth + 24
-                        Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+                        width: barStrip.clipboardActive ? clipboardCenterRow.implicitWidth + 32 : barStrip.notifActive ? notifCenterRow.implicitWidth + 32 : centerRow.implicitWidth + 24
+                        Behavior on width { NumberAnimation { duration: barStrip.clipboardActive ? 150 : 220; easing.type: Easing.OutCubic } }
                         height: Theme.design === "pills" ? Theme.barHeight - 8 : parent.height - 8
                         color: Theme.surface
                         radius: Theme.design === "pills" ? (Theme.barHeight - 8) / 2 : 8
@@ -176,8 +206,8 @@ ShellRoot {
                             verticalCenter: parent.verticalCenter
                         }
                         spacing: 0
-                        opacity: barStrip.notifActive ? 0.0 : 1.0
-                        Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
+                        opacity: barStrip.notifActive || barStrip.clipboardActive ? 0.0 : 1.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.InOutQuad } }
 
                         WorkspacesModule { monitor: hyprMonitor; screen: modelData; visible: Theme.showWorkspaces }
                     }
@@ -190,7 +220,7 @@ ShellRoot {
                             verticalCenter: parent.verticalCenter
                         }
                         spacing: 8
-                        opacity: barStrip.notifActive ? 1.0 : 0.0
+                        opacity: barStrip.notifActive && !barStrip.clipboardActive ? 1.0 : 0.0
                         Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.InOutQuad } }
 
                         Text {
@@ -223,6 +253,36 @@ ShellRoot {
                             verticalAlignment: Text.AlignVCenter
                             width: Math.min(implicitWidth, 200)
                             elide: Text.ElideRight
+                        }
+                    }
+
+                    // ── Clipboard notification display ────────────────────
+                    Row {
+                        id: clipboardCenterRow
+                        anchors {
+                            horizontalCenter: parent.horizontalCenter
+                            verticalCenter: parent.verticalCenter
+                        }
+                        spacing: 8
+                        opacity: barStrip.clipboardActive ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.InOutQuad } }
+
+                        Text {
+                            text: "✓"
+                            color: Theme.green
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 12
+                            verticalAlignment: Text.AlignVCenter
+                            font.bold: true
+                        }
+
+                        Text {
+                            text: "copied"
+                            color: Theme.text
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: 12
+                            verticalAlignment: Text.AlignVCenter
+                            font.bold: true
                         }
                     }
 
