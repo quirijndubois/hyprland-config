@@ -11,6 +11,7 @@ ShellRoot {
     property bool settingsOpen: false
     property string requestedPage: "main"
     property bool sessionLocked: false
+    property bool barVisible: true
 
     signal clipboardCopied()
 
@@ -43,6 +44,14 @@ ShellRoot {
             root.sessionLocked = true
             lockScreen.lock()
         }
+    }
+
+    IpcHandler {
+        target: "statusbar"
+
+        function toggle() { root.barVisible = !root.barVisible }
+        function show()   { root.barVisible = true }
+        function hide()   { root.barVisible = false }
     }
 
     LockScreen {
@@ -83,7 +92,7 @@ ShellRoot {
                 screen: modelData
 
                 anchors { top: true; left: true; right: true }
-                exclusiveZone: Theme.barHeight
+                exclusiveZone: root.barVisible ? Theme.barHeight : 0
                 implicitHeight: Theme.barHeight + Theme.gapsOut + 300
 
                 color: "transparent"
@@ -101,7 +110,9 @@ ShellRoot {
                 // (which Hyprland pushes down by gapsOut from the exclusive zone).
                 Rectangle {
                     id: barStrip
-                    anchors { top: parent.top; left: parent.left; right: parent.right }
+                    anchors { left: parent.left; right: parent.right }
+                    y: root.barVisible ? 0 : -(Theme.barHeight + Theme.gapsOut + 10)
+                    Behavior on y { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
                     height: (Theme.design === "pills" || Theme.design === "islands")
                             ? Theme.barHeight + Theme.gapsOut
                             : Theme.barHeight
