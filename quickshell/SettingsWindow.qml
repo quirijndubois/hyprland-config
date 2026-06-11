@@ -53,11 +53,13 @@ FloatingWindow {
     property var bluetoothDevices: []
     property string currentLayout: "dwindle"
     property string monitorName: ""
-    readonly property string wallpapersDir: "/home/q/wallpapers/"
+    property string wallpapersDir: homeDir ? homeDir + "/wallpapers/" : ""
     property var systemMonitors: []
     property real mouseSensitivity: 0.0
     property bool naturalScroll: true
     property real scrollFactor: 0.4
+
+    readonly property int sf: Theme.barFontSize
 
     property var systemSettingItems: {
         const items = []
@@ -69,6 +71,8 @@ FloatingWindow {
         items.push({ type: "sensitivity",    label: "mouse sensitivity" })
         items.push({ type: "natural_scroll", label: "natural scroll" })
         items.push({ type: "scroll_factor",  label: "scroll factor" })
+        items.push({ type: "section", label: "window" })
+        items.push({ type: "nav", label: "layout", icon: "", page: "layout" })
         return items
     }
 
@@ -241,7 +245,6 @@ FloatingWindow {
 
     property var mainItems: [
         { id: "appearance",    label: "appearance",    icon: "" },
-        { id: "layout",        label: "layout",        icon: "" },
         { id: "apps",          label: "applications",  icon: "" },
         { id: "bluetooth",     label: "bluetooth",     icon: "" },
         { id: "clipboard",     label: "clipboard",     icon: "" },
@@ -250,10 +253,10 @@ FloatingWindow {
     ]
 
     readonly property var appearanceItems: [
-        { id: "wallpaper", label: "wallpaper" },
-        { id: "palette",   label: "palette" },
-        { id: "design",    label: "bar design" },
-        { id: "bar",       label: "bar elements" },
+        { id: "wallpaper", label: "wallpaper",    icon: "" },
+        { id: "palette",   label: "palette",      icon: "" },
+        { id: "design",    label: "bar design",   icon: "" },
+        { id: "bar",       label: "bar elements", icon: "" },
     ]
 
     onVisibleChanged: {
@@ -271,7 +274,7 @@ FloatingWindow {
     // ── Discovery processes ────────────────────────────────────
     Process {
         id: listProc
-        command: ["sh", "-c", "ls \"" + root.wallpapersDir + "\""]
+        command: ["sh", "-c", "ls \"$HOME/wallpapers/\""]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {
@@ -282,7 +285,7 @@ FloatingWindow {
 
     Process {
         id: appsProc
-        command: ["python3", "/home/q/.config/quickshell/list_apps.py"]
+        command: ["sh", "-c", "python3 \"$HOME/.config/quickshell/list_apps.py\""]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {
@@ -644,7 +647,7 @@ FloatingWindow {
             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
         }
 
-        readonly property var level2Pages: ["wallpaper", "palette", "design", "bar"]
+        readonly property var level2Pages: ["wallpaper", "palette", "design", "bar", "layout"]
         property real subOffset: level2Pages.indexOf(root.page) >= 0 ? 1.0 : 0.0
         Behavior on subOffset {
             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
@@ -898,6 +901,8 @@ FloatingWindow {
                     root.setScrollFactor(root.scrollFactor + 0.05)
                 } else if (item.type === "font_size") {
                     Theme.barFontSize = Math.min(20, Theme.barFontSize + 1)
+                } else if (item.type === "nav") {
+                    navigateTo(item.page)
                 }
             }
         }
@@ -956,7 +961,7 @@ FloatingWindow {
                     text: "settings"
                     color: Theme.purple
                     font.family: "JetBrains Mono"
-                    font.pixelSize: 14
+                    font.pixelSize: sf + 1
                     font.bold: true
                 }
             }
@@ -985,7 +990,7 @@ FloatingWindow {
                             text: root.selectedIndex === index ? ">" : " "
                             color: Theme.blue
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 13
+                            font.pixelSize: sf
                             verticalAlignment: Text.AlignVCenter
                             width: 12
                         }
@@ -994,7 +999,7 @@ FloatingWindow {
                             text: modelData.icon || ""
                             color: Theme.purple
                             font.family: "Symbols Nerd Font Mono"
-                            font.pixelSize: 14
+                            font.pixelSize: sf + 1
                             verticalAlignment: Text.AlignVCenter
                             width: 20
                         }
@@ -1003,7 +1008,7 @@ FloatingWindow {
                             text: modelData.label
                             color: root.selectedIndex === index ? Theme.text : Theme.subtext
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 13
+                            font.pixelSize: sf
                             verticalAlignment: Text.AlignVCenter
                         }
                     }
@@ -1013,7 +1018,7 @@ FloatingWindow {
                         text: ">"
                         color: Theme.subtext
                         font.family: "JetBrains Mono"
-                        font.pixelSize: 12
+                        font.pixelSize: sf - 1
                     }
 
                 }
@@ -1052,7 +1057,7 @@ FloatingWindow {
                             text: "< back"
                             color: Theme.subtext
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 12
+                            font.pixelSize: sf - 1
                             verticalAlignment: Text.AlignVCenter
                         }
 
@@ -1060,7 +1065,7 @@ FloatingWindow {
                             text: "appearance"
                             color: Theme.purple
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 14
+                            font.pixelSize: sf + 1
                             font.bold: true
                             verticalAlignment: Text.AlignVCenter
                         }
@@ -1092,16 +1097,25 @@ FloatingWindow {
                                 text: root.selectedIndex === index ? ">" : " "
                                 color: Theme.blue
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 13
+                                font.pixelSize: sf
                                 verticalAlignment: Text.AlignVCenter
                                 width: 12
+                            }
+
+                            Text {
+                                text: modelData.icon || ""
+                                color: Theme.purple
+                                font.family: "Symbols Nerd Font Mono"
+                                font.pixelSize: sf + 1
+                                verticalAlignment: Text.AlignVCenter
+                                width: 20
                             }
 
                             Text {
                                 text: modelData.label
                                 color: root.selectedIndex === index ? Theme.text : Theme.subtext
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 13
+                                font.pixelSize: sf
                                 verticalAlignment: Text.AlignVCenter
                             }
                         }
@@ -1111,7 +1125,7 @@ FloatingWindow {
                             text: ">"
                             color: Theme.subtext
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 12
+                            font.pixelSize: sf - 1
                         }
                     }
                 }
@@ -1136,7 +1150,7 @@ FloatingWindow {
                             text: "< back"
                             color: Theme.subtext
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 12
+                            font.pixelSize: sf - 1
                             verticalAlignment: Text.AlignVCenter
                         }
 
@@ -1144,7 +1158,7 @@ FloatingWindow {
                             text: "applications"
                             color: Theme.purple
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 14
+                            font.pixelSize: sf + 1
                             font.bold: true
                             verticalAlignment: Text.AlignVCenter
                         }
@@ -1155,7 +1169,7 @@ FloatingWindow {
                         text: root.appsList.length + " apps"
                         color: Theme.subtext
                         font.family: "JetBrains Mono"
-                        font.pixelSize: 11
+                        font.pixelSize: sf - 2
                     }
                 }
 
@@ -1167,7 +1181,7 @@ FloatingWindow {
                     text: "loading..."
                     color: Theme.subtext
                     font.family: "JetBrains Mono"
-                    font.pixelSize: 13
+                    font.pixelSize: sf
                 }
 
                 ListView {
@@ -1193,7 +1207,7 @@ FloatingWindow {
                                 text: root.selectedIndex === index ? ">" : " "
                                 color: Theme.blue
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 13
+                                font.pixelSize: sf
                                 verticalAlignment: Text.AlignVCenter
                             }
 
@@ -1201,7 +1215,7 @@ FloatingWindow {
                                 text: modelData.name
                                 color: root.selectedIndex === index ? Theme.text : Theme.subtext
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 13
+                                font.pixelSize: sf
                                 verticalAlignment: Text.AlignVCenter
                             }
                         }
@@ -1230,6 +1244,626 @@ FloatingWindow {
                 }
             }
 
+
+            // ── Bluetooth ──────────────────────────────────────
+            Item {
+                anchors.fill: parent
+                visible: root.activeSubPage === "bluetooth"
+
+                Rectangle {
+                    id: btHeader
+                    width: parent.width
+                    height: 44
+                    color: Theme.surface
+
+                    Row {
+                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                        spacing: 14
+
+                        Text {
+                            text: "< back"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 1
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Text {
+                            text: "bluetooth"
+                            color: Theme.purple
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf + 1
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
+                    Text {
+                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                        text: root.bluetoothDevices.length + " known"
+                        color: Theme.subtext
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: sf - 2
+                    }
+                }
+
+                Rectangle { id: btDivider; anchors.top: btHeader.bottom; width: parent.width; height: 1; color: Theme.border }
+
+                Text {
+                    anchors.centerIn: parent
+                    visible: root.bluetoothDevices.length === 0
+                    text: "no known devices"
+                    color: Theme.subtext
+                    font.family: "JetBrains Mono"
+                    font.pixelSize: sf
+                }
+
+                ListView {
+                    id: btListView
+                    anchors { left: parent.left; right: parent.right; top: btDivider.bottom; bottom: parent.bottom }
+                    model: root.bluetoothDevices
+                    clip: true
+                    visible: root.bluetoothDevices.length > 0
+
+                    delegate: Rectangle {
+                        required property var modelData
+                        required property int index
+
+                        width: btListView.width
+                        height: 56
+                        color: root.selectedIndex === index ? Theme.border : "transparent"
+
+                        Row {
+                            anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                            spacing: 14
+
+                            Text {
+                                text: root.selectedIndex === index ? ">" : " "
+                                color: Theme.blue
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            Text {
+                                text: modelData.name
+                                color: root.selectedIndex === index ? Theme.text : Theme.subtext
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+
+                        Rectangle {
+                            anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
+                            width: 45
+                            height: 45
+                            radius: 4
+                            color: Theme.surface
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 10
+                                height: 10
+                                radius: 5
+                                color: modelData.connected ? Theme.green
+                                     : modelData.paired    ? Theme.blue
+                                     : Theme.subtext
+                                opacity: modelData.connected ? 1.0 : 0.35
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            // ── Clipboard ─────────────────────────────────────
+            Item {
+                anchors.fill: parent
+                visible: root.activeSubPage === "clipboard"
+
+                Rectangle {
+                    id: clipHeader
+                    width: parent.width
+                    height: 44
+                    color: Theme.surface
+
+                    Row {
+                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                        spacing: 14
+
+                        Text {
+                            text: "< back"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 1
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Text {
+                            text: "clipboard"
+                            color: Theme.purple
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf + 1
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
+                    Text {
+                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                        text: root.clipboardItems.length + " entries"
+                        color: Theme.subtext
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: sf - 2
+                    }
+                }
+
+                Rectangle { id: clipDivider; anchors.top: clipHeader.bottom; width: parent.width; height: 1; color: Theme.border }
+
+                Text {
+                    anchors.centerIn: parent
+                    visible: root.clipboardItems.length === 0
+                    text: "no history yet"
+                    color: Theme.subtext
+                    font.family: "JetBrains Mono"
+                    font.pixelSize: sf - 2
+                }
+
+                ListView {
+                    id: clipListView
+                    anchors { left: parent.left; right: parent.right; top: clipDivider.bottom; bottom: parent.bottom }
+                    model: root.clipboardItems
+                    clip: true
+                    visible: root.clipboardItems.length > 0
+
+                    delegate: Rectangle {
+                        required property var modelData
+                        required property int index
+
+                        width: clipListView.width
+                        height: 44
+                        color: root.selectedIndex === index ? Theme.border : "transparent"
+
+                        Row {
+                            anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                            spacing: 14
+
+                            Text {
+                                text: root.selectedIndex === index ? ">" : " "
+                                color: Theme.blue
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            Text {
+                                text: modelData.preview
+                                color: root.selectedIndex === index ? Theme.text : Theme.subtext
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
+                                width: clipListView.width - 80
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            // ── Notifications ──────────────────────────────────
+            Item {
+                anchors.fill: parent
+                visible: root.activeSubPage === "notifications"
+
+                Rectangle {
+                    id: notifHeader
+                    width: parent.width
+                    height: 44
+                    color: Theme.surface
+
+                    Row {
+                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                        spacing: 14
+
+                        Text {
+                            text: "< back"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 1
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Text {
+                            text: "notifications"
+                            color: Theme.purple
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf + 1
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
+                    Row {
+                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                        spacing: 12
+
+                        Text {
+                            text: notifListView.count + " total"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 2
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Text {
+                            visible: notifListView.count > 0
+                            text: "clear all"
+                            color: Theme.red
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 2
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+                }
+
+                Rectangle { id: notifDivider; anchors.top: notifHeader.bottom; width: parent.width; height: 1; color: Theme.border }
+
+                Text {
+                    anchors.centerIn: parent
+                    visible: notifListView.count === 0
+                    text: "no notifications"
+                    color: Theme.subtext
+                    font.family: "JetBrains Mono"
+                    font.pixelSize: sf
+                }
+
+                ListView {
+                    id: notifListView
+                    anchors { left: parent.left; right: parent.right; top: notifDivider.bottom; bottom: parent.bottom }
+                    model: Notifications.history
+                    clip: true
+                    visible: notifListView.count > 0
+
+                    delegate: Rectangle {
+                        id: notifDelegate
+                        required property var modelData
+                        required property int index
+
+                        width: notifListView.width
+                        height: 64
+                        color: root.selectedIndex === index ? Theme.border : "transparent"
+
+                        function dismiss() {
+                            Notifications.dismiss(modelData.id)
+                        }
+
+                        // Urgency bar on left edge
+                        Rectangle {
+                            anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+                            width: 3
+                            color: modelData.urgency === NotificationUrgency.Critical ? Theme.red
+                                 : modelData.urgency === NotificationUrgency.Low      ? Theme.subtext
+                                 : Theme.blue
+                        }
+
+                        Column {
+                            anchors {
+                                left: parent.left; leftMargin: 16
+                                right: dismissBtn.left; rightMargin: 8
+                                verticalCenter: parent.verticalCenter
+                            }
+                            spacing: 3
+
+                            Text {
+                                width: parent.width
+                                text: modelData.appName || "unknown"
+                                color: modelData.urgency === NotificationUrgency.Critical ? Theme.red
+                                     : modelData.urgency === NotificationUrgency.Low      ? Theme.subtext
+                                     : Theme.blue
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf - 3
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: modelData.summary || ""
+                                color: root.selectedIndex === index ? Theme.text : Theme.text
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf
+                                font.bold: true
+                                elide: Text.ElideRight
+                                visible: text !== ""
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: modelData.body || ""
+                                color: Theme.subtext
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf - 3
+                                elide: Text.ElideRight
+                                visible: text !== ""
+                            }
+                        }
+
+                        Text {
+                            id: dismissBtn
+                            anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                            text: "x"
+                            color: root.selectedIndex === index ? Theme.red : Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf
+                        }
+
+                    }
+                }
+            }
+
+            // ── System ────────────────────────────────────────
+            Item {
+                anchors.fill: parent
+                visible: root.activeSubPage === "system"
+
+                Rectangle {
+                    id: sysHeader
+                    width: parent.width
+                    height: 44
+                    color: Theme.surface
+
+                    Row {
+                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                        spacing: 14
+
+                        Text {
+                            text: "< back"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 1
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Text {
+                            text: "system"
+                            color: Theme.purple
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf + 1
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+                }
+
+                Rectangle { id: sysDivider; anchors.top: sysHeader.bottom; width: parent.width; height: 1; color: Theme.border }
+
+                ListView {
+                    id: sysListView
+                    anchors { left: parent.left; right: parent.right; top: sysDivider.bottom; bottom: parent.bottom }
+                    model: root.systemSettingItems
+                    clip: true
+                    interactive: true
+
+                    delegate: Item {
+                        id: sysDelegate
+                        required property var modelData
+                        required property int index
+                        property bool isSection: sysDelegate.modelData.type === "section"
+                        property bool isSelected: root.selectedIndex === sysDelegate.index
+
+                        width: sysListView.width
+                        height: isSection ? 32 : 48
+
+                        // Section header background
+                        Rectangle {
+                            anchors.fill: parent
+                            visible: sysDelegate.isSection
+                            color: Theme.surface
+
+                            Text {
+                                anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                                text: sysDelegate.modelData.label || ""
+                                color: Theme.blue
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf - 2
+                                font.bold: true
+                            }
+                        }
+
+                        // Interactive row
+                        Rectangle {
+                            anchors.fill: parent
+                            visible: !sysDelegate.isSection
+                            color: sysDelegate.isSelected ? Theme.border : "transparent"
+
+                            // Cursor indicator
+                            Text {
+                                anchors { left: parent.left; leftMargin: 8; verticalCenter: parent.verticalCenter }
+                                visible: sysDelegate.isSelected
+                                text: ">"
+                                color: Theme.blue
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf
+                            }
+
+                            // Label column
+                            Column {
+                                anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                                spacing: 2
+
+                                Text {
+                                    text: sysDelegate.modelData.label || ""
+                                    color: sysDelegate.isSelected ? Theme.text : Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: sf - 1
+                                }
+
+                                Text {
+                                    visible: (sysDelegate.modelData.sub || "") !== ""
+                                    text: sysDelegate.modelData.sub || ""
+                                    color: Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: sf - 3
+                                }
+                            }
+
+                            // Scale chips
+                            Row {
+                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                                visible: sysDelegate.modelData.type === "scale"
+                                spacing: 4
+
+                                Repeater {
+                                    id: scaleRep
+                                    property var entry: sysDelegate.modelData
+                                    model: [1, 1.25, 1.5, 2]
+
+                                    delegate: Rectangle {
+                                        id: scaleChip
+                                        required property var modelData
+                                        property bool active: scaleRep.entry.monitor
+                                            ? Math.abs(scaleRep.entry.monitor.scale - scaleChip.modelData) < 0.01
+                                            : false
+                                        width: 36; height: 22; radius: 3
+                                        color: active ? Theme.blue : Theme.surface
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: scaleChip.modelData % 1 === 0
+                                                ? Math.round(scaleChip.modelData) + "×"
+                                                : scaleChip.modelData + "×"
+                                            color: active ? Theme.base : Theme.subtext
+                                            font.family: "JetBrains Mono"
+                                            font.pixelSize: sf - 4
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                root.selectedIndex = sysDelegate.index
+                                                root.setMonitorScale(scaleRep.entry.monitor, scaleChip.modelData)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Stepper (+/value/−) for sensitivity, scroll_factor, and font_size
+                            Row {
+                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                                visible: sysDelegate.modelData.type === "sensitivity" || sysDelegate.modelData.type === "scroll_factor" || sysDelegate.modelData.type === "font_size"
+                                spacing: 10
+
+                                Text {
+                                    text: "−"
+                                    color: (sysDelegate.modelData.type === "sensitivity" && root.mouseSensitivity <= -1.0) ||
+                                           (sysDelegate.modelData.type === "scroll_factor" && root.scrollFactor <= 0.1) ||
+                                           (sysDelegate.modelData.type === "font_size" && Theme.barFontSize <= 8)
+                                           ? Theme.surface : Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: sf + 3
+                                    verticalAlignment: Text.AlignVCenter
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            root.selectedIndex = sysDelegate.index
+                                            if (sysDelegate.modelData.type === "sensitivity") root.setMouseSensitivity(root.mouseSensitivity - 0.1)
+                                            else if (sysDelegate.modelData.type === "scroll_factor") root.setScrollFactor(root.scrollFactor - 0.05)
+                                            else if (sysDelegate.modelData.type === "font_size") Theme.barFontSize = Math.max(8, Theme.barFontSize - 1)
+                                        }
+                                    }
+                                }
+
+                                Text {
+                                    text: sysDelegate.modelData.type === "sensitivity"
+                                        ? root.mouseSensitivity.toFixed(2)
+                                        : sysDelegate.modelData.type === "scroll_factor"
+                                        ? root.scrollFactor.toFixed(2)
+                                        : Theme.barFontSize
+                                    color: Theme.text
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: sf - 1
+                                    width: 44
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                Text {
+                                    text: "+"
+                                    color: (sysDelegate.modelData.type === "sensitivity" && root.mouseSensitivity >= 1.0) ||
+                                           (sysDelegate.modelData.type === "scroll_factor" && root.scrollFactor >= 3.0) ||
+                                           (sysDelegate.modelData.type === "font_size" && Theme.barFontSize >= 20)
+                                           ? Theme.surface : Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: sf + 1
+                                    verticalAlignment: Text.AlignVCenter
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            root.selectedIndex = sysDelegate.index
+                                            if (sysDelegate.modelData.type === "sensitivity") root.setMouseSensitivity(root.mouseSensitivity + 0.1)
+                                            else if (sysDelegate.modelData.type === "scroll_factor") root.setScrollFactor(root.scrollFactor + 0.05)
+                                            else if (sysDelegate.modelData.type === "font_size") Theme.barFontSize = Math.min(20, Theme.barFontSize + 1)
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Toggle for natural_scroll
+                            Text {
+                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                                visible: sysDelegate.modelData.type === "natural_scroll"
+                                text: root.naturalScroll ? "[*]" : "[ ]"
+                                color: root.naturalScroll ? Theme.green : Theme.subtext
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: { root.selectedIndex = sysDelegate.index; root.setNaturalScroll(!root.naturalScroll) }
+                                }
+                            }
+
+                            // Arrow for nav items
+                            Text {
+                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                                visible: sysDelegate.modelData.type === "nav"
+                                text: "›"
+                                color: sysDelegate.isSelected ? Theme.blue : Theme.subtext
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf + 5
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                visible: sysDelegate.modelData.type === "nav"
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: { root.selectedIndex = sysDelegate.index; keyNav.navigateTo(sysDelegate.modelData.page) }
+                            }
+
+                        }
+
+                        Rectangle {
+                            anchors.bottom: parent.bottom
+                            width: parent.width; height: 1
+                            color: Theme.border; opacity: 0.3
+                            visible: !sysDelegate.isSection
+                        }
+                    }
+                }
+            }
+            }
+
+            // ── Level-2 container (appearance sub-pages) ─────────────────
+            Item {
+                width: parent.width
+                height: parent.height
+                x: parent.width * (1.0 - keyNav.subOffset)
+
             // ── Layout ────────────────────────────────────────
             Item {
                 anchors.fill: parent
@@ -1249,7 +1883,7 @@ FloatingWindow {
                             text: "< back"
                             color: Theme.subtext
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 12
+                            font.pixelSize: sf - 1
                             verticalAlignment: Text.AlignVCenter
                         }
 
@@ -1257,7 +1891,7 @@ FloatingWindow {
                             text: "layout"
                             color: Theme.purple
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 14
+                            font.pixelSize: sf + 1
                             font.bold: true
                             verticalAlignment: Text.AlignVCenter
                         }
@@ -1289,7 +1923,7 @@ FloatingWindow {
                                 text: root.selectedIndex === index ? ">" : " "
                                 color: Theme.blue
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 13
+                                font.pixelSize: sf
                                 verticalAlignment: Text.AlignVCenter
                             }
 
@@ -1301,14 +1935,14 @@ FloatingWindow {
                                     text: modelData.label
                                     color: root.selectedIndex === index ? Theme.text : Theme.subtext
                                     font.family: "JetBrains Mono"
-                                    font.pixelSize: 13
+                                    font.pixelSize: sf
                                 }
 
                                 Text {
                                     text: modelData.desc
                                     color: Theme.teal
                                     font.family: "JetBrains Mono"
-                                    font.pixelSize: 10
+                                    font.pixelSize: sf - 3
                                 }
                             }
                         }
@@ -1369,581 +2003,12 @@ FloatingWindow {
                             text: "*"
                             color: Theme.green
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 13
+                            font.pixelSize: sf
                         }
 
                     }
                 }
             }
-
-            // ── Bluetooth ──────────────────────────────────────
-            Item {
-                anchors.fill: parent
-                visible: root.activeSubPage === "bluetooth"
-
-                Rectangle {
-                    id: btHeader
-                    width: parent.width
-                    height: 44
-                    color: Theme.surface
-
-                    Row {
-                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
-                        spacing: 14
-
-                        Text {
-                            text: "< back"
-                            color: Theme.subtext
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: 12
-                            verticalAlignment: Text.AlignVCenter
-                        }
-
-                        Text {
-                            text: "bluetooth"
-                            color: Theme.purple
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: 14
-                            font.bold: true
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-
-                    Text {
-                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-                        text: root.bluetoothDevices.length + " known"
-                        color: Theme.subtext
-                        font.family: "JetBrains Mono"
-                        font.pixelSize: 11
-                    }
-                }
-
-                Rectangle { id: btDivider; anchors.top: btHeader.bottom; width: parent.width; height: 1; color: Theme.border }
-
-                Text {
-                    anchors.centerIn: parent
-                    visible: root.bluetoothDevices.length === 0
-                    text: "no known devices"
-                    color: Theme.subtext
-                    font.family: "JetBrains Mono"
-                    font.pixelSize: 13
-                }
-
-                ListView {
-                    id: btListView
-                    anchors { left: parent.left; right: parent.right; top: btDivider.bottom; bottom: parent.bottom }
-                    model: root.bluetoothDevices
-                    clip: true
-                    visible: root.bluetoothDevices.length > 0
-
-                    delegate: Rectangle {
-                        required property var modelData
-                        required property int index
-
-                        width: btListView.width
-                        height: 56
-                        color: root.selectedIndex === index ? Theme.border : "transparent"
-
-                        Row {
-                            anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
-                            spacing: 14
-
-                            Text {
-                                text: root.selectedIndex === index ? ">" : " "
-                                color: Theme.blue
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 13
-                                verticalAlignment: Text.AlignVCenter
-                            }
-
-                            Text {
-                                text: modelData.name
-                                color: root.selectedIndex === index ? Theme.text : Theme.subtext
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 13
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                        }
-
-                        Rectangle {
-                            anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
-                            width: 45
-                            height: 45
-                            radius: 4
-                            color: Theme.surface
-
-                            Rectangle {
-                                anchors.centerIn: parent
-                                width: 10
-                                height: 10
-                                radius: 5
-                                color: modelData.connected ? Theme.green
-                                     : modelData.paired    ? Theme.blue
-                                     : Theme.subtext
-                                opacity: modelData.connected ? 1.0 : 0.35
-                            }
-                        }
-
-                    }
-                }
-            }
-
-            // ── Clipboard ─────────────────────────────────────
-            Item {
-                anchors.fill: parent
-                visible: root.activeSubPage === "clipboard"
-
-                Rectangle {
-                    id: clipHeader
-                    width: parent.width
-                    height: 44
-                    color: Theme.surface
-
-                    Row {
-                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
-                        spacing: 14
-
-                        Text {
-                            text: "< back"
-                            color: Theme.subtext
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: 12
-                            verticalAlignment: Text.AlignVCenter
-                        }
-
-                        Text {
-                            text: "clipboard"
-                            color: Theme.purple
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: 14
-                            font.bold: true
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-
-                    Text {
-                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-                        text: root.clipboardItems.length + " entries"
-                        color: Theme.subtext
-                        font.family: "JetBrains Mono"
-                        font.pixelSize: 11
-                    }
-                }
-
-                Rectangle { id: clipDivider; anchors.top: clipHeader.bottom; width: parent.width; height: 1; color: Theme.border }
-
-                Text {
-                    anchors.centerIn: parent
-                    visible: root.clipboardItems.length === 0
-                    text: "no history yet"
-                    color: Theme.subtext
-                    font.family: "JetBrains Mono"
-                    font.pixelSize: 11
-                }
-
-                ListView {
-                    id: clipListView
-                    anchors { left: parent.left; right: parent.right; top: clipDivider.bottom; bottom: parent.bottom }
-                    model: root.clipboardItems
-                    clip: true
-                    visible: root.clipboardItems.length > 0
-
-                    delegate: Rectangle {
-                        required property var modelData
-                        required property int index
-
-                        width: clipListView.width
-                        height: 44
-                        color: root.selectedIndex === index ? Theme.border : "transparent"
-
-                        Row {
-                            anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
-                            spacing: 14
-
-                            Text {
-                                text: root.selectedIndex === index ? ">" : " "
-                                color: Theme.blue
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 13
-                                verticalAlignment: Text.AlignVCenter
-                            }
-
-                            Text {
-                                text: modelData.preview
-                                color: root.selectedIndex === index ? Theme.text : Theme.subtext
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 13
-                                verticalAlignment: Text.AlignVCenter
-                                elide: Text.ElideRight
-                                width: clipListView.width - 80
-                            }
-                        }
-
-                    }
-                }
-            }
-
-            // ── Notifications ──────────────────────────────────
-            Item {
-                anchors.fill: parent
-                visible: root.activeSubPage === "notifications"
-
-                Rectangle {
-                    id: notifHeader
-                    width: parent.width
-                    height: 44
-                    color: Theme.surface
-
-                    Row {
-                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
-                        spacing: 14
-
-                        Text {
-                            text: "< back"
-                            color: Theme.subtext
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: 12
-                            verticalAlignment: Text.AlignVCenter
-                        }
-
-                        Text {
-                            text: "notifications"
-                            color: Theme.purple
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: 14
-                            font.bold: true
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-
-                    Row {
-                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-                        spacing: 12
-
-                        Text {
-                            text: notifListView.count + " total"
-                            color: Theme.subtext
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: 11
-                            verticalAlignment: Text.AlignVCenter
-                        }
-
-                        Text {
-                            visible: notifListView.count > 0
-                            text: "clear all"
-                            color: Theme.red
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: 11
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-                }
-
-                Rectangle { id: notifDivider; anchors.top: notifHeader.bottom; width: parent.width; height: 1; color: Theme.border }
-
-                Text {
-                    anchors.centerIn: parent
-                    visible: notifListView.count === 0
-                    text: "no notifications"
-                    color: Theme.subtext
-                    font.family: "JetBrains Mono"
-                    font.pixelSize: 13
-                }
-
-                ListView {
-                    id: notifListView
-                    anchors { left: parent.left; right: parent.right; top: notifDivider.bottom; bottom: parent.bottom }
-                    model: Notifications.history
-                    clip: true
-                    visible: notifListView.count > 0
-
-                    delegate: Rectangle {
-                        id: notifDelegate
-                        required property var modelData
-                        required property int index
-
-                        width: notifListView.width
-                        height: 64
-                        color: root.selectedIndex === index ? Theme.border : "transparent"
-
-                        function dismiss() {
-                            Notifications.dismiss(modelData.id)
-                        }
-
-                        // Urgency bar on left edge
-                        Rectangle {
-                            anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
-                            width: 3
-                            color: modelData.urgency === NotificationUrgency.Critical ? Theme.red
-                                 : modelData.urgency === NotificationUrgency.Low      ? Theme.subtext
-                                 : Theme.blue
-                        }
-
-                        Column {
-                            anchors {
-                                left: parent.left; leftMargin: 16
-                                right: dismissBtn.left; rightMargin: 8
-                                verticalCenter: parent.verticalCenter
-                            }
-                            spacing: 3
-
-                            Text {
-                                width: parent.width
-                                text: modelData.appName || "unknown"
-                                color: modelData.urgency === NotificationUrgency.Critical ? Theme.red
-                                     : modelData.urgency === NotificationUrgency.Low      ? Theme.subtext
-                                     : Theme.blue
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 10
-                                elide: Text.ElideRight
-                            }
-
-                            Text {
-                                width: parent.width
-                                text: modelData.summary || ""
-                                color: root.selectedIndex === index ? Theme.text : Theme.text
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 13
-                                font.bold: true
-                                elide: Text.ElideRight
-                                visible: text !== ""
-                            }
-
-                            Text {
-                                width: parent.width
-                                text: modelData.body || ""
-                                color: Theme.subtext
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 10
-                                elide: Text.ElideRight
-                                visible: text !== ""
-                            }
-                        }
-
-                        Text {
-                            id: dismissBtn
-                            anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
-                            text: "x"
-                            color: root.selectedIndex === index ? Theme.red : Theme.subtext
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: 13
-                        }
-
-                    }
-                }
-            }
-
-            // ── System ────────────────────────────────────────
-            Item {
-                anchors.fill: parent
-                visible: root.activeSubPage === "system"
-
-                Rectangle {
-                    id: sysHeader
-                    width: parent.width
-                    height: 44
-                    color: Theme.surface
-
-                    Row {
-                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
-                        spacing: 14
-
-                        Text {
-                            text: "< back"
-                            color: Theme.subtext
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: 12
-                            verticalAlignment: Text.AlignVCenter
-                        }
-
-                        Text {
-                            text: "system"
-                            color: Theme.purple
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: 14
-                            font.bold: true
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-                }
-
-                Rectangle { id: sysDivider; anchors.top: sysHeader.bottom; width: parent.width; height: 1; color: Theme.border }
-
-                ListView {
-                    id: sysListView
-                    anchors { left: parent.left; right: parent.right; top: sysDivider.bottom; bottom: parent.bottom }
-                    model: root.systemSettingItems
-                    clip: true
-                    interactive: true
-
-                    delegate: Item {
-                        id: sysDelegate
-                        required property var modelData
-                        required property int index
-                        property bool isSection: sysDelegate.modelData.type === "section"
-                        property bool isSelected: root.selectedIndex === sysDelegate.index
-
-                        width: sysListView.width
-                        height: isSection ? 32 : 48
-
-                        // Section header background
-                        Rectangle {
-                            anchors.fill: parent
-                            visible: sysDelegate.isSection
-                            color: Theme.surface
-
-                            Text {
-                                anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
-                                text: sysDelegate.modelData.label || ""
-                                color: Theme.blue
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 11
-                                font.bold: true
-                            }
-                        }
-
-                        // Interactive row
-                        Rectangle {
-                            anchors.fill: parent
-                            visible: !sysDelegate.isSection
-                            color: sysDelegate.isSelected ? Theme.border : "transparent"
-
-                            // Cursor indicator
-                            Text {
-                                anchors { left: parent.left; leftMargin: 8; verticalCenter: parent.verticalCenter }
-                                visible: sysDelegate.isSelected
-                                text: ">"
-                                color: Theme.blue
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 13
-                            }
-
-                            // Label column
-                            Column {
-                                anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
-                                spacing: 2
-
-                                Text {
-                                    text: sysDelegate.modelData.label || ""
-                                    color: sysDelegate.isSelected ? Theme.text : Theme.subtext
-                                    font.family: "JetBrains Mono"
-                                    font.pixelSize: 12
-                                }
-
-                                Text {
-                                    visible: (sysDelegate.modelData.sub || "") !== ""
-                                    text: sysDelegate.modelData.sub || ""
-                                    color: Theme.subtext
-                                    font.family: "JetBrains Mono"
-                                    font.pixelSize: 10
-                                }
-                            }
-
-                            // Scale chips
-                            Row {
-                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
-                                visible: sysDelegate.modelData.type === "scale"
-                                spacing: 4
-
-                                Repeater {
-                                    id: scaleRep
-                                    property var entry: sysDelegate.modelData
-                                    model: [1, 1.25, 1.5, 2]
-
-                                    delegate: Rectangle {
-                                        id: scaleChip
-                                        required property var modelData
-                                        property bool active: scaleRep.entry.monitor
-                                            ? Math.abs(scaleRep.entry.monitor.scale - scaleChip.modelData) < 0.01
-                                            : false
-                                        width: 36; height: 22; radius: 3
-                                        color: active ? Theme.blue : Theme.surface
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: scaleChip.modelData % 1 === 0
-                                                ? Math.round(scaleChip.modelData) + "×"
-                                                : scaleChip.modelData + "×"
-                                            color: active ? Theme.base : Theme.subtext
-                                            font.family: "JetBrains Mono"
-                                            font.pixelSize: 9
-                                        }
-
-                                    }
-                                }
-                            }
-
-                            // Stepper (+/value/−) for sensitivity, scroll_factor, and font_size
-                            Row {
-                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
-                                visible: sysDelegate.modelData.type === "sensitivity" || sysDelegate.modelData.type === "scroll_factor" || sysDelegate.modelData.type === "font_size"
-                                spacing: 10
-
-                                Text {
-                                    text: "−"
-                                    color: (sysDelegate.modelData.type === "sensitivity" && root.mouseSensitivity <= -1.0) ||
-                                           (sysDelegate.modelData.type === "scroll_factor" && root.scrollFactor <= 0.1) ||
-                                           (sysDelegate.modelData.type === "font_size" && Theme.barFontSize <= 8)
-                                           ? Theme.surface : Theme.subtext
-                                    font.family: "JetBrains Mono"
-                                    font.pixelSize: 16
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-
-                                Text {
-                                    text: sysDelegate.modelData.type === "sensitivity"
-                                        ? root.mouseSensitivity.toFixed(2)
-                                        : sysDelegate.modelData.type === "scroll_factor"
-                                        ? root.scrollFactor.toFixed(2)
-                                        : Theme.barFontSize
-                                    color: Theme.text
-                                    font.family: "JetBrains Mono"
-                                    font.pixelSize: 12
-                                    width: 44
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-
-                                Text {
-                                    text: "+"
-                                    color: (sysDelegate.modelData.type === "sensitivity" && root.mouseSensitivity >= 1.0) ||
-                                           (sysDelegate.modelData.type === "scroll_factor" && root.scrollFactor >= 3.0) ||
-                                           (sysDelegate.modelData.type === "font_size" && Theme.barFontSize >= 20)
-                                           ? Theme.surface : Theme.subtext
-                                    font.family: "JetBrains Mono"
-                                    font.pixelSize: 14
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                            }
-
-                            // Toggle for natural_scroll
-                            Text {
-                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
-                                visible: sysDelegate.modelData.type === "natural_scroll"
-                                text: root.naturalScroll ? "[*]" : "[ ]"
-                                color: root.naturalScroll ? Theme.green : Theme.subtext
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 13
-                            }
-
-                        }
-
-                        Rectangle {
-                            anchors.bottom: parent.bottom
-                            width: parent.width; height: 1
-                            color: Theme.border; opacity: 0.3
-                            visible: !sysDelegate.isSection
-                        }
-                    }
-                }
-            }
-            }
-
-            // ── Level-2 container (appearance sub-pages) ─────────────────
-            Item {
-                width: parent.width
-                height: parent.height
-                x: parent.width * (1.0 - keyNav.subOffset)
 
             // ── Wallpaper ──────────────────────────────────────
             Item {
@@ -1964,7 +2029,7 @@ FloatingWindow {
                             text: "< back"
                             color: Theme.subtext
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 12
+                            font.pixelSize: sf - 1
                             verticalAlignment: Text.AlignVCenter
                         }
 
@@ -1972,7 +2037,7 @@ FloatingWindow {
                             text: "wallpaper"
                             color: Theme.purple
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 14
+                            font.pixelSize: sf + 1
                             font.bold: true
                             verticalAlignment: Text.AlignVCenter
                         }
@@ -1987,7 +2052,7 @@ FloatingWindow {
                     text: "loading..."
                     color: Theme.subtext
                     font.family: "JetBrains Mono"
-                    font.pixelSize: 13
+                    font.pixelSize: sf
                 }
 
                 ListView {
@@ -2013,7 +2078,7 @@ FloatingWindow {
                                 text: root.selectedIndex === index ? ">" : " "
                                 color: Theme.blue
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 13
+                                font.pixelSize: sf
                                 verticalAlignment: Text.AlignVCenter
                             }
 
@@ -2021,7 +2086,7 @@ FloatingWindow {
                                 text: modelData.replace(/\.[^.]+$/, "")
                                 color: root.selectedIndex === index ? Theme.text : Theme.subtext
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 13
+                                font.pixelSize: sf
                                 verticalAlignment: Text.AlignVCenter
                             }
                         }
@@ -2066,7 +2131,7 @@ FloatingWindow {
                             text: "< back"
                             color: Theme.subtext
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 12
+                            font.pixelSize: sf - 1
                             verticalAlignment: Text.AlignVCenter
                         }
 
@@ -2074,7 +2139,7 @@ FloatingWindow {
                             text: "palette"
                             color: Theme.purple
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 14
+                            font.pixelSize: sf + 1
                             font.bold: true
                             verticalAlignment: Text.AlignVCenter
                         }
@@ -2106,7 +2171,7 @@ FloatingWindow {
                                 text: root.selectedIndex === index ? ">" : " "
                                 color: Theme.blue
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 13
+                                font.pixelSize: sf
                                 verticalAlignment: Text.AlignVCenter
                             }
 
@@ -2114,7 +2179,7 @@ FloatingWindow {
                                 text: modelData.label
                                 color: root.selectedIndex === index ? Theme.text : Theme.subtext
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 13
+                                font.pixelSize: sf
                                 verticalAlignment: Text.AlignVCenter
                             }
                         }
@@ -2139,7 +2204,7 @@ FloatingWindow {
                             text: "*"
                             color: Theme.green
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 13
+                            font.pixelSize: sf
                         }
 
                     }
@@ -2165,7 +2230,7 @@ FloatingWindow {
                             text: "< back"
                             color: Theme.subtext
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 12
+                            font.pixelSize: sf - 1
                             verticalAlignment: Text.AlignVCenter
                         }
 
@@ -2173,7 +2238,7 @@ FloatingWindow {
                             text: "bar design"
                             color: Theme.purple
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 14
+                            font.pixelSize: sf + 1
                             font.bold: true
                             verticalAlignment: Text.AlignVCenter
                         }
@@ -2205,7 +2270,7 @@ FloatingWindow {
                                 text: root.selectedIndex === index ? ">" : " "
                                 color: Theme.blue
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 13
+                                font.pixelSize: sf
                                 verticalAlignment: Text.AlignVCenter
                             }
 
@@ -2217,14 +2282,14 @@ FloatingWindow {
                                     text: modelData.label
                                     color: root.selectedIndex === index ? Theme.text : Theme.subtext
                                     font.family: "JetBrains Mono"
-                                    font.pixelSize: 13
+                                    font.pixelSize: sf
                                 }
 
                                 Text {
                                     text: modelData.desc
                                     color: Theme.purple
                                     font.family: "JetBrains Mono"
-                                    font.pixelSize: 10
+                                    font.pixelSize: sf - 3
                                 }
                             }
                         }
@@ -2252,7 +2317,7 @@ FloatingWindow {
                             text: "*"
                             color: Theme.green
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 13
+                            font.pixelSize: sf
                         }
 
                     }
@@ -2278,7 +2343,7 @@ FloatingWindow {
                             text: "< back"
                             color: Theme.subtext
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 12
+                            font.pixelSize: sf - 1
                             verticalAlignment: Text.AlignVCenter
                         }
 
@@ -2286,7 +2351,7 @@ FloatingWindow {
                             text: "bar elements"
                             color: Theme.purple
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 14
+                            font.pixelSize: sf + 1
                             font.bold: true
                             verticalAlignment: Text.AlignVCenter
                         }
@@ -2297,7 +2362,7 @@ FloatingWindow {
                         text: root.barModules.length + " modules"
                         color: Theme.subtext
                         font.family: "JetBrains Mono"
-                        font.pixelSize: 11
+                        font.pixelSize: sf - 2
                     }
                 }
 
@@ -2326,7 +2391,7 @@ FloatingWindow {
                                 text: root.selectedIndex === index ? ">" : " "
                                 color: Theme.blue
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 13
+                                font.pixelSize: sf
                                 verticalAlignment: Text.AlignVCenter
                             }
 
@@ -2334,7 +2399,7 @@ FloatingWindow {
                                 text: modelData.label
                                 color: root.selectedIndex === index ? Theme.text : Theme.subtext
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 13
+                                font.pixelSize: sf
                                 verticalAlignment: Text.AlignVCenter
                             }
                         }
@@ -2345,7 +2410,7 @@ FloatingWindow {
                             text:  active ? "[*]" : "[ ]"
                             color: active ? Theme.green : Theme.subtext
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 13
+                            font.pixelSize: sf
                         }
 
                     }
@@ -2378,7 +2443,7 @@ FloatingWindow {
                         text: "/"
                         color: Theme.purple
                         font.family: "JetBrains Mono"
-                        font.pixelSize: 14
+                        font.pixelSize: sf + 1
                         font.bold: true
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -2387,7 +2452,7 @@ FloatingWindow {
                         text: root.searchQuery
                         color: Theme.text
                         font.family: "JetBrains Mono"
-                        font.pixelSize: 13
+                        font.pixelSize: sf
                         verticalAlignment: Text.AlignVCenter
                     }
 
@@ -2412,7 +2477,7 @@ FloatingWindow {
                         : root.searchResults.length + " result" + (root.searchResults.length === 1 ? "" : "s")
                     color: Theme.subtext
                     font.family: "JetBrains Mono"
-                    font.pixelSize: 11
+                    font.pixelSize: sf - 2
                 }
             }
 
@@ -2447,7 +2512,7 @@ FloatingWindow {
                             text: root.selectedSearchIndex === index ? ">" : " "
                             color: Theme.blue
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 13
+                            font.pixelSize: sf
                             verticalAlignment: Text.AlignVCenter
                         }
 
@@ -2460,7 +2525,7 @@ FloatingWindow {
                                 color: modelData.type === "math" ? Theme.green
                                      : root.selectedSearchIndex === index ? Theme.text : Theme.subtext
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: modelData.type === "math" ? 16 : 13
+                                font.pixelSize: modelData.type === "math" ? sf + 3 : sf
                                 font.bold: modelData.type === "math"
                                 elide: modelData.type === "clipboard" ? Text.ElideRight : Text.ElideNone
                                 width: modelData.type === "clipboard" ? searchList.width - 100 : implicitWidth
@@ -2490,7 +2555,7 @@ FloatingWindow {
                                      : modelData.type === "bar_module" ? Theme.purple
                                      : Theme.blue
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: 10
+                                font.pixelSize: sf - 3
                             }
                         }
                     }
@@ -2617,7 +2682,7 @@ FloatingWindow {
                         text: ">"
                         color: Theme.subtext
                         font.family: "JetBrains Mono"
-                        font.pixelSize: 12
+                        font.pixelSize: sf - 1
                     }
 
                     // Math copy hint
@@ -2627,7 +2692,7 @@ FloatingWindow {
                         text: "copy"
                         color: Theme.subtext
                         font.family: "JetBrains Mono"
-                        font.pixelSize: 10
+                        font.pixelSize: sf - 3
                     }
 
                     // Web open hint
@@ -2637,7 +2702,7 @@ FloatingWindow {
                         text: "open"
                         color: Theme.yellow
                         font.family: "JetBrains Mono"
-                        font.pixelSize: 10
+                        font.pixelSize: sf - 3
                     }
 
                     // Active indicator for designs, layouts, palettes
@@ -2649,7 +2714,7 @@ FloatingWindow {
                         text: "*"
                         color: Theme.green
                         font.family: "JetBrains Mono"
-                        font.pixelSize: 13
+                        font.pixelSize: sf
                     }
 
                     // Design bar preview

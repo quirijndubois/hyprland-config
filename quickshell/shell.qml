@@ -41,7 +41,7 @@ ShellRoot {
     }
 
     Process {
-        command: ["awww-daemon"]
+        command: ["sh", "-c", "pgrep -x awww-daemon > /dev/null || awww-daemon"]
         running: true
     }
 

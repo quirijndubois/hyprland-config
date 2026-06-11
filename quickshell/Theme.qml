@@ -7,9 +7,10 @@ Singleton {
     id: root
 
     property string name:          "mocha"
-    property string design:        "default"
-    property int    barHeight:     30
-    property int    barFontSize:   13
+    property string design:           "default"
+    property int    barHeightPadding: 17
+    property int    barHeight:        barFontSize + barHeightPadding
+    property int    barFontSize:      13
     property string barFontFamily: "JetBrains Mono"
     property bool   barFontBold:   false
     property string separatorText: "  │  "
@@ -107,36 +108,36 @@ Singleton {
 
     function applyDesign(d) {
         if (d === "compact") {
-            barHeight = 24
+            barHeightPadding = 11
             barFontFamily = "JetBrains Mono"; barFontBold = false
             separatorText = "  │  "
         } else if (d === "islands") {
-            barHeight = 30
+            barHeightPadding = 17
             barFontFamily = "JetBrains Mono"; barFontBold = false
             separatorText = "  │  "
         } else if (d === "bold") {
-            barHeight = 40
+            barHeightPadding = 27
             barFontFamily = "JetBrains Mono"; barFontBold = true
             separatorText = "  │  "
         } else if (d === "minimal") {
-            barHeight = 18
+            barHeightPadding = 5
             barFontFamily = "JetBrains Mono"; barFontBold = false
             separatorText = " · "
         } else if (d === "clean") {
-            barHeight = 30
+            barHeightPadding = 17
             barFontFamily = "Noto Sans"; barFontBold = false
             separatorText = "  /  "
         } else if (d === "hacker") {
-            barHeight = 32
+            barHeightPadding = 19
             barFontFamily = "Hack"; barFontBold = false
             separatorText = "  |  "
         } else if (d === "pills") {
-            barHeight = 32
+            barHeightPadding = 19
             barFontFamily = "JetBrains Mono"; barFontBold = false
             separatorText = "  │  "
         } else {
             // default
-            barHeight = 30
+            barHeightPadding = 17
             barFontFamily = "JetBrains Mono"; barFontBold = false
             separatorText = "  │  "
         }
