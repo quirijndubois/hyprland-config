@@ -14,24 +14,31 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 - **System tray** — Discord, Telegram, and any StatusNotifierItem app
 
 ### Settings Overlay (`Alt+S`)
-- **Fuzzy search** across wallpapers, palettes, designs, layouts, apps, Bluetooth devices, clipboard history, bar module toggles, and system settings
+- **Fuzzy search** across wallpapers, palettes, designs, layouts, bar modules, apps, Bluetooth devices, clipboard history, monitors, and system settings
+- **Appearance page** — select palettes, bar designs, and toggle individual bar modules (menu, clock, battery, CPU, memory, GPU, workspaces, music, audio, Bluetooth, network, sleep inhibit, tray)
+- **Monitor layout page** — enable/disable monitors, set resolution/scale/position, assign workspaces to specific monitors
+- **System settings page** — adjust monitor scales, mouse sensitivity, natural scroll, scroll factor, window layout (dwindle/master/scrolling/monocle)
+- **Notification history** — view recent notifications, manually dismiss, or clear all
 - **Filesystem browser** — type any absolute path to browse directories, open files with `xdg-open`
 - **Math evaluator** — type `5 * (3 + 2)`, `2^16`, `(100 - 32) / 1.8` — evaluates inline, copies result with Enter
 - **Web search fallback** — no results? Opens your query in DuckDuckGo
 - **Keyboard-driven** — full navigation with arrows, Enter, Escape; reorder the main menu with `Shift+Up`/`Shift+Down` (persisted)
 
 ### Theming & Layout
-- **12 color palettes** — Catppuccin (mocha, macchiato, frappe, latte), Tokyo Night, Gruvbox, Nord, Dracula, Rose Pine, One Dark, Everforest, Solarized Dark — switch instantly
+- **12 color palettes** — Catppuccin (mocha, macchiato, frappe, latte), Tokyo Night, Gruvbox, Nord, Dracula, Rose Pine, One Dark, Everforest, Solarized Dark — switch instantly with live Kitty terminal color sync
 - **8 bar designs** — default, compact, islands (floating pills), pills (per-module chips on a transparent bar), bold, minimal, clean (sans-serif), hacker
 - **4 Hyprland layouts** — dwindle, master, scrolling, monocle — toggle from settings, applies live
 - **Custom bezier animations** — 5 hand-tuned curves for windows, workspaces, fade, and layers
+- **Bar module toggles** — independently show/hide menu, clock, battery, CPU, memory, GPU, workspaces, music, audio, Bluetooth, network, sleep inhibit, and system tray
+- **Adjustable bar font size** — customize text size while maintaining bar proportions
 
 ### System Management
+- **Monitor layout** — configure position, resolution, scale, and enable/disable monitors; assign workspaces to specific monitors
 - **Wallpaper manager** — browse and apply images with smooth `awww` transitions (fade, slide, wipe, wave, grow, and more), per-monitor
 - **App launcher** — browse `.desktop` entries with icons, launch from the settings overlay
 - **Bluetooth manager** — pair, connect, disconnect devices — all from settings
 - **Clipboard history** — browse and re-copy entries via `cliphist`; searchable from fuzzy finder
-- **System settings** — monitor scale, mouse sensitivity, natural scroll, scroll factor, font size — applied live via `hyprctl` and persisted
+- **System settings** — monitor scale/resolution, enable/disable monitors, mouse sensitivity, natural scroll, scroll factor — applied live via `hyprctl` and persisted to `user-settings.lua`
 
 ### Lock Screen
 - **Wayland session lock** — centered clock + date, password auth via `unix_chkpwd`, blur background. Lock with `Alt+Delete`.
@@ -51,6 +58,7 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 | `Alt + Q` | Open terminal (kitty) |
 | `Alt + Space` | Open app launcher (settings apps page) |
 | `Alt + S` | Toggle settings overlay |
+| `Alt + D` | Toggle status bar visibility |
 | `Alt + W` | Close window |
 | `Alt + F` | Toggle fullscreen |
 | `Alt + V` | Toggle float |
