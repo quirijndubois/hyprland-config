@@ -24,7 +24,7 @@ hl.workspace_rule({ workspace = "9", monitor = "HDMI-A-1" })
 ---------------------
 
 local terminal = "kitty"
-local fileManager = "dolphin"
+local fileManager = "kitty -e yazi"
 local browser = "firefox"
 
 -------------------
@@ -260,7 +260,9 @@ for i = 1, 9 do
 	hl.bind(mainMod .. " + " .. i, hl.dsp.focus({ workspace = i }))
 	hl.bind(mainMod .. " + SHIFT + " .. i, hl.dsp.window.move({ workspace = i }))
 end
-hl.bind(mainMod .. " + 0", hl.dsp.focus({ workspace = 10 }))
+hl.bind(mainMod .. " + 0", function()
+	hl.config({ cursor = { zoom_factor = 1.0 } })
+end)
 hl.bind(mainMod .. " + SHIFT + 0", hl.dsp.window.move({ workspace = 10 }))
 
 -- Move/resize windows with mouse dragging

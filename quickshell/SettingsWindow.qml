@@ -88,14 +88,21 @@ FloatingWindow {
     property real mouseSensitivity: 0.0
     property bool naturalScroll: true
     property real scrollFactor: 0.4
+    property int selectedMonitorIdx: 0
+    property var workspaceRules: []
+
+    readonly property var monitorColors: [Theme.blue, Theme.green, Theme.yellow, Theme.teal, Theme.purple, Theme.red]
 
     readonly property int sf: Theme.barFontSize
 
     property var systemSettingItems: {
         const items = []
         items.push({ type: "section", label: "display" })
-        for (const m of root.systemMonitors)
+        for (const m of root.systemMonitors) {
             items.push({ type: "scale", label: m.name, sub: m.width + "×" + m.height, monitor: m })
+            items.push({ type: "monitor_toggle", label: m.enabled ? "disable" : "enable", monitor: m })
+        }
+        items.push({ type: "nav", label: "monitor layout", icon: "", page: "monitor_layout" })
         items.push({ type: "font_size", label: "font size" })
         items.push({ type: "section", label: "input" })
         items.push({ type: "sensitivity",    label: "mouse sensitivity" })
@@ -111,6 +118,11 @@ FloatingWindow {
         if (page === "bluetooth") btListProc.running = true
         if (page === "layout") layoutQueryProc.running = true
         if (page === "clipboard") { clipDaemonProc.running = true; clipListProc.running = true }
+        if (page === "monitor_layout") {
+            root.selectedMonitorIdx = 0
+            wsRulesProc.running = false
+            wsRulesProc.running = true
+        }
         if (page === "system") {
             sysMonitorsProc.running = false
             sysMonitorsProc.running = true
@@ -413,18 +425,68 @@ FloatingWindow {
 
     Process {
         id: sysMonitorsProc
-        command: ["sh", "-c", "hyprctl -j monitors 2>/dev/null"]
+        command: ["sh", "-c", "hyprctl -j monitors 2>/dev/null; echo '---SEP---'; cat $HOME/.config/hypr/user-settings.lua 2>/dev/null || echo ''"]
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
-                    root.systemMonitors = JSON.parse(this.text.trim()).map(m => ({
+                    const parts = this.text.trim().split('---SEP---')
+                    const monitors = JSON.parse(parts[0])
+                    const userSettings = parts.length > 1 ? parts[1].trim() : ''
+
+                    const disabledMonitors = new Set()
+                    const monitorConfigs = {}
+
+                    const lines = userSettings.split('\n')
+                    for (const line of lines) {
+                        if (!line.includes('hl.monitor')) continue
+
+                        const outputMatch = line.match(/output\s*=\s*"([^"]+)"/)
+                        if (!outputMatch) continue
+
+                        const name = outputMatch[1]
+                        const isDisabled = line.includes('disabled') && line.includes('true')
+                        const modeMatch = line.match(/mode\s*=\s*"([^"]+)"/)
+                        const posMatch = line.match(/position\s*=\s*"([^"]+)"/)
+                        const scaleMatch = line.match(/scale\s*=\s*([\d.]+)/)
+
+                        if (isDisabled) {
+                            disabledMonitors.add(name)
+                        }
+
+                        monitorConfigs[name] = {
+                            mode: modeMatch ? modeMatch[1] : null,
+                            position: posMatch ? posMatch[1] : null,
+                            scale: scaleMatch ? parseFloat(scaleMatch[1]) : 1.0
+                        }
+                    }
+
+                    const activeMonitors = monitors.map(m => ({
                         name: m.name,
                         desc: (m.description || m.name).split(" ")[0],
                         width: m.width, height: m.height,
                         refreshRate: m.refreshRate || 60,
                         x: m.x, y: m.y,
-                        scale: m.scale || 1.0
+                        scale: m.scale || 1.0,
+                        enabled: !disabledMonitors.has(m.name)
                     }))
+
+                    const disabledMonList = Array.from(disabledMonitors).map(name => {
+                        const config = monitorConfigs[name]
+                        const mode = config && config.mode ? config.mode.split('x') : ['1920', '1080']
+                        return {
+                            name: name,
+                            desc: name.split(" ")[0],
+                            width: parseInt(mode[0]) || 1920,
+                            height: parseInt(mode[1]) || 1080,
+                            refreshRate: 60,
+                            x: config && config.position ? parseInt(config.position.split('x')[0]) : 0,
+                            y: config && config.position ? parseInt(config.position.split('x')[1]) : 0,
+                            scale: config && config.scale ? config.scale : 1.0,
+                            enabled: false
+                        }
+                    }).filter(m => !activeMonitors.find(a => a.name === m.name))
+
+                    root.systemMonitors = activeMonitors.concat(disabledMonList)
                 } catch(e) {}
             }
         }
@@ -459,20 +521,80 @@ FloatingWindow {
         stderr: StdioCollector {}
     }
 
+    Process {
+        id: wsRulesProc
+        command: ["sh", "-c",
+            "hyprctl -j workspacerules 2>/dev/null; echo '---SEP---';" +
+            "cat \"$HOME/.config/hypr/user-settings.lua\" 2>/dev/null; echo '---SEP---';" +
+            "cat \"$HOME/.config/hypr/hyprland.lua\" 2>/dev/null"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const parts = this.text.split('---SEP---')
+
+                    // Try hyprctl first
+                    let rules = []
+                    try {
+                        const raw = JSON.parse(parts[0].trim())
+                        rules = raw
+                            .map(r => ({ workspace: String(r.workspaceString || r.workspace || ""), monitor: r.monitor || "" }))
+                            .filter(r => r.workspace && r.monitor && /^\d+$/.test(r.workspace))
+                    } catch(e) {}
+
+                    // Fall back to parsing config files (user-settings overrides hyprland.lua)
+                    if (rules.length === 0) {
+                        const fileRules = {}
+                        for (const src of [parts[2] || "", parts[1] || ""]) {
+                            for (const line of src.split('\n')) {
+                                if (!line.includes('workspace_rule')) continue
+                                const ws = (line.match(/workspace\s*=\s*"([^"]+)"/) || [])[1]
+                                const mon = (line.match(/monitor\s*=\s*"([^"]+)"/) || [])[1]
+                                if (ws && mon && /^\d+$/.test(ws)) fileRules[ws] = mon
+                            }
+                        }
+                        rules = Object.entries(fileRules).map(([ws, mon]) => ({ workspace: ws, monitor: mon }))
+                    }
+
+                    root.workspaceRules = rules.sort((a, b) => parseInt(a.workspace) - parseInt(b.workspace))
+                } catch(e) {}
+            }
+        }
+    }
+
     function _writeUserSettings() {
         const lines = []
-        for (const m of root.systemMonitors)
-            lines.push('hl.monitor({ output = "' + m.name + '", mode = "' + m.width + 'x' + m.height + '", position = "' + m.x + 'x' + m.y + '", scale = ' + m.scale + ' })')
+        for (const m of root.systemMonitors) {
+            const disableStr = !m.enabled ? ', disabled = true' : ''
+            lines.push('hl.monitor({ output = "' + m.name + '", mode = "' + m.width + 'x' + m.height + '", position = "' + m.x + 'x' + m.y + '", scale = ' + m.scale + disableStr + ' })')
+        }
+        for (const r of root.workspaceRules)
+            lines.push('hl.workspace_rule({ workspace = "' + r.workspace + '", monitor = "' + r.monitor + '" })')
         const ns = root.naturalScroll ? 'true' : 'false'
         lines.push('hl.config({ input = { sensitivity = ' + root.mouseSensitivity + ', touchpad = { natural_scroll = ' + ns + ', scroll_factor = ' + root.scrollFactor + ' } } })')
         const args = lines.map(l => "'" + l + "'").join(' ')
         return "printf '%s\\n' " + args + " > \"$HOME/.config/hypr/user-settings.lua\""
     }
 
+    function setWorkspaceMonitor(ws, monitorName) {
+        const arr = Array.from(root.workspaceRules)
+        const idx = arr.findIndex(r => r.workspace === ws)
+        if (idx >= 0) arr[idx] = { workspace: ws, monitor: monitorName }
+        else arr.push({ workspace: ws, monitor: monitorName })
+        arr.sort((a, b) => parseInt(a.workspace) - parseInt(b.workspace))
+        root.workspaceRules = arr
+        const evalCmd = "hyprctl eval \"hl.workspace_rule({ workspace = '" + ws + "', monitor = '" + monitorName + "' })\""
+        sysApplyProc.command = ["sh", "-c", root._writeUserSettings() + " ; " + evalCmd]
+        sysApplyProc.running = false
+        sysApplyProc.running = true
+    }
+
     function _rescaleCmd() {
         let cmd = ""
-        for (const m of root.systemMonitors)
-            cmd += " ; hyprctl eval \"hl.monitor({ output = '" + m.name + "', mode = '" + m.width + "x" + m.height + "', position = '" + m.x + "x" + m.y + "', scale = " + m.scale + " })\""
+        for (const m of root.systemMonitors) {
+            const disableStr = !m.enabled ? ', disabled = true' : ''
+            cmd += " ; hyprctl eval \"hl.monitor({ output = '" + m.name + "', mode = '" + m.width + "x" + m.height + "', position = '" + m.x + "x" + m.y + "', scale = " + m.scale + disableStr + " })\""
+        }
+        cmd += " && hyprctl reload"
         return cmd
     }
 
@@ -484,6 +606,38 @@ FloatingWindow {
             root.systemMonitors = arr
         }
         const evalCmd = "hyprctl eval \"hl.monitor({ output = '" + mon.name + "', mode = '" + mon.width + "x" + mon.height + "', position = '" + mon.x + "x" + mon.y + "', scale = " + scale + " })\""
+        sysApplyProc.command = ["sh", "-c", root._writeUserSettings() + " ; " + evalCmd]
+        sysApplyProc.running = false
+        sysApplyProc.running = true
+    }
+
+    function setMonitorEnabled(mon, enabled) {
+        const enabledCount = root.systemMonitors.filter(m => m.enabled).length
+        if (!enabled && enabledCount <= 1) {
+            return
+        }
+        const idx = root.systemMonitors.findIndex(m => m.name === mon.name)
+        if (idx >= 0) {
+            const arr = Array.from(root.systemMonitors)
+            arr[idx] = Object.assign({}, arr[idx], { enabled: enabled })
+            root.systemMonitors = arr
+        }
+        const disableStr = enabled ? '' : ', disabled = true'
+        const evalCmd = "hyprctl eval \"hl.monitor({ output = '" + mon.name + "', mode = '" + mon.width + "x" + mon.height + "', position = '" + mon.x + "x" + mon.y + "', scale = " + mon.scale + disableStr + " })\" && hyprctl reload"
+        sysApplyProc.command = ["sh", "-c", root._writeUserSettings() + " ; " + evalCmd]
+        sysApplyProc.running = false
+        sysApplyProc.running = true
+    }
+
+    function setMonitorPosition(mon, dx, dy) {
+        const idx = root.systemMonitors.findIndex(m => m.name === mon.name)
+        if (idx >= 0) {
+            const arr = Array.from(root.systemMonitors)
+            arr[idx] = Object.assign({}, arr[idx], { x: mon.x + dx, y: mon.y + dy })
+            root.systemMonitors = arr
+        }
+        const disableStr = !mon.enabled ? ', disabled = true' : ''
+        const evalCmd = "hyprctl eval \"hl.monitor({ output = '" + mon.name + "', mode = '" + mon.width + "x" + mon.height + "', position = '" + (mon.x + dx) + "x" + (mon.y + dy) + "', scale = " + mon.scale + disableStr + " })\" && hyprctl reload"
         sysApplyProc.command = ["sh", "-c", root._writeUserSettings() + " ; " + evalCmd]
         sysApplyProc.running = false
         sysApplyProc.running = true
@@ -707,7 +861,7 @@ FloatingWindow {
             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
         }
 
-        readonly property var level2Pages: ["wallpaper", "palette", "design", "bar", "layout"]
+        readonly property var level2Pages: ["wallpaper", "palette", "design", "bar", "layout", "monitor_layout"]
         property real subOffset: level2Pages.indexOf(root.page) >= 0 ? 1.0 : 0.0
         Behavior on subOffset {
             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
@@ -740,6 +894,12 @@ FloatingWindow {
             }
 
             if (event.key === Qt.Key_Up) {
+                if (root.page === "monitor_layout") {
+                    const mon = root.systemMonitors[root.selectedMonitorIdx]
+                    if (mon) root.setMonitorPosition(mon, 0, -50)
+                    event.accepted = true
+                    return
+                }
                 const shiftHeld = (event.modifiers & Qt.ShiftModifier) !== 0
                 if (inSearch) {
                     if (root.selectedSearchIndex > 0) {
@@ -788,6 +948,12 @@ FloatingWindow {
             }
 
             if (event.key === Qt.Key_Down) {
+                if (root.page === "monitor_layout") {
+                    const mon = root.systemMonitors[root.selectedMonitorIdx]
+                    if (mon) root.setMonitorPosition(mon, 0, 50)
+                    event.accepted = true
+                    return
+                }
                 const shiftHeld = (event.modifiers & Qt.ShiftModifier) !== 0
                 const maxIdx = root.page === "main"          ? root.mainItems.length - 1
                              : root.page === "appearance"     ? root.appearanceItems.length - 1
@@ -849,9 +1015,15 @@ FloatingWindow {
 
             if (event.key === Qt.Key_Left || event.key === Qt.Key_Right) {
                 if (!inSearch) {
-                    if (root.page === "system") {
+                    if (root.page === "monitor_layout") {
+                        const mon = root.systemMonitors[root.selectedMonitorIdx]
+                        if (mon && event.key === Qt.Key_Left) root.setMonitorPosition(mon, -50, 0)
+                        else if (mon && event.key === Qt.Key_Right) root.setMonitorPosition(mon, 50, 0)
+                        event.accepted = true
+                        return
+                    } else if (root.page === "system") {
                         const item = root.systemSettingItems[root.selectedIndex]
-                        if (item && item.type !== "section") {
+                        if (item && item.type !== "section" && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)) {
                             const dir = event.key === Qt.Key_Right ? 1 : -1
                             if (item.type === "sensitivity") {
                                 root.setMouseSensitivity(root.mouseSensitivity + dir * 0.1)
@@ -864,6 +1036,8 @@ FloatingWindow {
                                 const ci = scales.findIndex(s => Math.abs(item.monitor.scale - s) < 0.01)
                                 const ni = Math.max(0, Math.min(scales.length - 1, (ci < 0 ? 0 : ci) + dir))
                                 root.setMonitorScale(item.monitor, scales[ni])
+                            } else if (item.type === "monitor_toggle") {
+                                root.setMonitorEnabled(item.monitor, !item.monitor.enabled)
                             }
                         }
                         event.accepted = true
@@ -882,11 +1056,30 @@ FloatingWindow {
                 }
             }
 
+            if (event.key === Qt.Key_Tab) {
+                if (root.page === "monitor_layout" && !inSearch) {
+                    root.selectedMonitorIdx = (root.selectedMonitorIdx + 1) % root.systemMonitors.length
+                    event.accepted = true
+                    return
+                }
+            }
+
             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                 if (inSearch) activateSearchItem()
                 else activateItem()
                 event.accepted = true
                 return
+            }
+
+            if (root.page === "monitor_layout" && !inSearch && event.text && event.text.length === 1) {
+                const n = parseInt(event.text)
+                if (!isNaN(n)) {
+                    const ws = String(n === 0 ? 10 : n)
+                    const mon = root.systemMonitors[root.selectedMonitorIdx]
+                    if (mon) root.setWorkspaceMonitor(ws, mon.name)
+                    event.accepted = true
+                    return
+                }
             }
 
             if (event.text && event.text.length === 1 && event.text.charCodeAt(0) >= 32) {
@@ -953,6 +1146,8 @@ FloatingWindow {
                     const scales = [1, 1.25, 1.5, 2]
                     const curIdx = scales.findIndex(s => Math.abs(item.monitor.scale - s) < 0.01)
                     root.setMonitorScale(item.monitor, scales[(curIdx + 1) % scales.length])
+                } else if (item.type === "monitor_toggle") {
+                    root.setMonitorEnabled(item.monitor, !item.monitor.enabled)
                 } else if (item.type === "sensitivity") {
                     root.setMouseSensitivity(root.mouseSensitivity + 0.1)
                 } else if (item.type === "natural_scroll") {
@@ -1924,6 +2119,23 @@ FloatingWindow {
                                 }
                             }
 
+                            // Toggle for monitor enable/disable
+                            Text {
+                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                                visible: sysDelegate.modelData.type === "monitor_toggle"
+                                property var entry: sysDelegate.modelData
+                                property bool canDisable: root.systemMonitors.filter(m => m.enabled).length > 1
+                                text: entry.monitor && entry.monitor.enabled ? "[ ●]" : "[●]"
+                                color: (entry.monitor && entry.monitor.enabled) ? Theme.green : (canDisable ? Theme.subtext : Theme.surface)
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: parent.canDisable || parent.entry.monitor?.enabled ? Qt.PointingHandCursor : Qt.ForbiddenCursor
+                                    onClicked: { root.selectedIndex = sysDelegate.index; root.setMonitorEnabled(sysDelegate.modelData.monitor, !sysDelegate.modelData.monitor.enabled) }
+                                }
+                            }
+
                             // Arrow for nav items
                             Text {
                                 anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
@@ -2102,6 +2314,194 @@ FloatingWindow {
                             font.pixelSize: sf
                         }
 
+                    }
+                }
+            }
+
+            // ── Monitor Layout ──────────────────────────────────────
+            Item {
+                anchors.fill: parent
+                visible: root.activeSubPage === "monitor_layout"
+
+                Rectangle {
+                    id: monLayoutHeader
+                    width: parent.width
+                    height: 44
+                    color: Theme.surface
+
+                    Row {
+                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                        spacing: 14
+
+                        Text {
+                            text: "< back"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 1
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Text {
+                            text: "monitor layout"
+                            color: Theme.purple
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf + 1
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Text {
+                            text: ""
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 3
+                            verticalAlignment: Text.AlignVCenter
+                            leftPadding: 20
+                        }
+                    }
+                }
+
+                Rectangle { id: monLayoutDivider; anchors.top: monLayoutHeader.bottom; width: parent.width; height: 1; color: Theme.border }
+
+                Item {
+                    id: monLayoutCanvas
+                    anchors { left: parent.left; right: parent.right; top: monLayoutDivider.bottom; bottom: wsPanel.top; margins: 16 }
+
+                    property real minX: root.systemMonitors.length > 0 ? root.systemMonitors.reduce((mn, m) => Math.min(mn, m.x), Infinity) : 0
+                    property real minY: root.systemMonitors.length > 0 ? root.systemMonitors.reduce((mn, m) => Math.min(mn, m.y), Infinity) : 0
+                    property real totalW: root.systemMonitors.length > 0 ? root.systemMonitors.reduce((max, m) => Math.max(max, m.x + m.width  / m.scale), -Infinity) - minX : 1920
+                    property real totalH: root.systemMonitors.length > 0 ? root.systemMonitors.reduce((max, m) => Math.max(max, m.y + m.height / m.scale), -Infinity) - minY : 1080
+                    property real monScale: Math.min(width / totalW, height / totalH, 1.0)
+                    property real offsetX: (width  - totalW * monScale) / 2 - minX * monScale
+                    property real offsetY: (height - totalH * monScale) / 2 - minY * monScale
+
+                    Repeater {
+                        model: root.systemMonitors
+                        delegate: Rectangle {
+                            required property var modelData
+                            required property int index
+
+                            x: modelData.x * monLayoutCanvas.monScale + monLayoutCanvas.offsetX
+                            y: modelData.y * monLayoutCanvas.monScale + monLayoutCanvas.offsetY
+                            width:  (modelData.width  / modelData.scale) * monLayoutCanvas.monScale
+                            height: (modelData.height / modelData.scale) * monLayoutCanvas.monScale
+
+                            color: root.selectedMonitorIdx === index ? Theme.blue : Theme.surface
+                            opacity: modelData.enabled ? 1.0 : 0.35
+                            border.width: 0
+                            radius: 0
+
+                            // Selection outline drawn outside bounds so it doesn't affect adjacency
+                            Rectangle {
+                                visible: root.selectedMonitorIdx === index
+                                anchors { fill: parent; margins: -2 }
+                                color: "transparent"
+                                border.color: Theme.blue
+                                border.width: 2
+                                radius: 2
+                                z: 1
+                            }
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 3
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: modelData.name
+                                    color: root.selectedMonitorIdx === index ? Theme.base : Theme.text
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: Math.max(8, Math.min(13, monLayoutCanvas.monScale * 40))
+                                    font.bold: true
+                                }
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: Math.round(modelData.width / modelData.scale) + "×" + Math.round(modelData.height / modelData.scale)
+                                    color: root.selectedMonitorIdx === index ? Theme.base : Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: Math.max(7, Math.min(10, monLayoutCanvas.monScale * 30))
+                                }
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: modelData.x + "x" + modelData.y
+                                    color: root.selectedMonitorIdx === index ? Theme.base : Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: Math.max(7, Math.min(10, monLayoutCanvas.monScale * 30))
+                                }
+                            }
+
+                        }
+                    }
+                }
+
+                // ── Workspace assignment panel ──────────────────
+                Rectangle {
+                    id: wsPanel
+                    anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                    height: 76
+                    color: Theme.surface
+
+                    Rectangle {
+                        anchors { top: parent.top; left: parent.left; right: parent.right }
+                        height: 1; color: Theme.border
+                    }
+
+                    Column {
+                        anchors { fill: parent; topMargin: 8; leftMargin: 16; rightMargin: 16; bottomMargin: 8 }
+                        spacing: 6
+
+                        Text {
+                            property var selMon: root.systemMonitors[root.selectedMonitorIdx]
+                            text: selMon ? "workspaces → " + selMon.name : "workspaces"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 3
+                        }
+
+                        Row {
+                            id: wsChipRow
+                            width: parent.width
+                            spacing: 4
+
+                            Repeater {
+                                model: 10
+                                delegate: Rectangle {
+                                    required property int index
+                                    property string ws: String(index + 1)
+                                    property var rule: root.workspaceRules.find(r => r.workspace === ws) || null
+                                    property var selMon: root.systemMonitors[root.selectedMonitorIdx]
+                                    property bool onSelectedMon: rule && selMon && rule.monitor === selMon.name
+                                    property bool onOtherMon: rule && selMon && rule.monitor !== selMon.name
+                                    property int otherMonIdx: onOtherMon ? root.systemMonitors.findIndex(m => m.name === rule.monitor) : -1
+
+                                    width: (wsChipRow.width - 9 * wsChipRow.spacing) / 10; height: 36; radius: 3
+                                    color: onSelectedMon ? Theme.blue : Theme.surface
+
+                                    Column {
+                                        anchors.centerIn: parent
+                                        spacing: 1
+
+                                        Text {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            text: ws
+                                            color: onSelectedMon ? Theme.base : Theme.text
+                                            font.family: "JetBrains Mono"
+                                            font.pixelSize: sf
+                                        }
+
+                                        Text {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            text: onSelectedMon ? "✓" : (onOtherMon && otherMonIdx >= 0 ? root.systemMonitors[otherMonIdx].name : (rule ? rule.monitor : "—"))
+                                            color: onSelectedMon ? Theme.base : (onOtherMon ? Theme.subtext : Theme.surface)
+                                            font.family: "JetBrains Mono"
+                                            font.pixelSize: sf - 4
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

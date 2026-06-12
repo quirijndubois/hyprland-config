@@ -143,13 +143,17 @@ Singleton {
         }
     }
 
-    Component.onCompleted: applyPalette(name)
+    Component.onCompleted: {
+        applyPalette(name)
+        updateKittyTheme()
+    }
 
     onNameChanged: {
         applyPalette(name)
         saveProc.command = ["sh", "-c", "mkdir -p \"$HOME/.config/quickshell\" && printf '%s' '" + name + "' > $HOME/.config/quickshell/theme"]
         saveProc.running = false
         saveProc.running = true
+        updateKittyTheme()
     }
 
     onDesignChanged: {
@@ -176,6 +180,38 @@ Singleton {
         barModulesSaveProc.running = true
     }
 
+    function updateKittyTheme() {
+        const lines = [
+            "foreground " + root.text,
+            "background " + root.base,
+            "color0 " + root.surface,
+            "color1 " + root.red,
+            "color2 " + root.green,
+            "color3 " + root.yellow,
+            "color4 " + root.blue,
+            "color5 " + root.purple,
+            "color6 " + root.teal,
+            "color7 " + root.text,
+            "color8 " + root.subtext,
+            "color9 " + root.red,
+            "color10 " + root.green,
+            "color11 " + root.yellow,
+            "color12 " + root.blue,
+            "color13 " + root.purple,
+            "color14 " + root.teal,
+            "color15 " + root.text,
+            "cursor " + root.blue
+        ]
+        const themeContent = lines.join('\n')
+        const escaped = themeContent.replace(/'/g, "'\\''")
+        kittyThemeSaveProc.command = ["sh", "-c",
+            "mkdir -p \"$HOME/.config/kitty\" && printf '%s' '" + escaped + "' > $HOME/.config/kitty/color_scheme.conf && " +
+            "\"$HOME/.config/quickshell/update-kitty-colors.sh\" \"$HOME/.config/kitty/color_scheme.conf\" 2>/dev/null || true"
+        ]
+        kittyThemeSaveProc.running = false
+        kittyThemeSaveProc.running = true
+    }
+
     onShowClockChanged: saveBarModules()
     onShowBatteryChanged: saveBarModules()
     onShowCpuChanged: saveBarModules()
@@ -200,6 +236,7 @@ Singleton {
     Process { id: saveDesignProc }
     Process { id: barModulesSaveProc }
     Process { id: saveBarFontSizeProc }
+    Process { id: kittyThemeSaveProc }
 
     Process {
         id: loadProc
