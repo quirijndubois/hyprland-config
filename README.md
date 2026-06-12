@@ -11,7 +11,7 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 - **Hover popups** - every module shows a rich info popup on hover (CPU per-core chart + top processes, GPU utilization + VRAM, memory bar + top processes, per-app audio sliders with live peak meters, battery time remaining, music controls with seek bar, network IP/SSID, Bluetooth device list, and more)
 - **Notification center** - the workspace pill animates on incoming notifications (widens, shows app + summary for 5s). Hover it for the 5 most recent notifications with per-item dismiss and clear-all. Full history in settings.
 - **MPRIS music visualization** - animated dancing bars when music plays, with progress bar, seek, and transport controls
-- **System tray** - Discord, Telegram, and any StatusNotifierItem app
+- **System tray** - any StatusNotifierItem app
 
 ### Settings Overlay (`Alt+S`)
 - **Fuzzy search** across wallpapers, palettes, designs, layouts, bar modules, apps, Bluetooth devices, clipboard history, monitors, and system settings
