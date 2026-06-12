@@ -76,7 +76,7 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 | `Alt + C` | Color picker (hyprpicker) |
 | `Alt + Shift + C` | Region screenshot |
 | `Alt + = / -` | Zoom in / out |
-| `Alt + Shift + MouseUp` | Reset zoom |
+| `Alt + 0` | Reset zoom |
 
 ## Installation
 
