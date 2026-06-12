@@ -97,6 +97,31 @@ Singleton {
             text="#839496"; subtext="#657b83"
             blue="#268bd2"; green="#859900"; red="#dc322f"
             yellow="#b58900"; teal="#2aa198"; purple="#6c71c4"
+        } else if (n === "solarized-light") {
+            base="#fdf6e3"; surface="#eee8d5"; border="#d6d0be"
+            text="#657b83"; subtext="#93a1a1"
+            blue="#268bd2"; green="#859900"; red="#dc322f"
+            yellow="#b58900"; teal="#2aa198"; purple="#6c71c4"
+        } else if (n === "gruvbox-light") {
+            base="#fbf1c7"; surface="#f9f5d7"; border="#f3eac7"
+            text="#3c3836"; subtext="#7c6f64"
+            blue="#458588"; green="#689d6a"; red="#cc241d"
+            yellow="#d79921"; teal="#689d6a"; purple="#b16286"
+        } else if (n === "nord-light") {
+            base="#eceff4"; surface="#e5e9f0"; border="#d8dee9"
+            text="#2e3440"; subtext="#4c566a"
+            blue="#5e81ac"; green="#a3be8c"; red="#bf616a"
+            yellow="#ebcb8b"; teal="#88c0d0"; purple="#b48ead"
+        } else if (n === "rosepine-dawn") {
+            base="#faf4ed"; surface="#fffaf3"; border="#f2ede5"
+            text="#575279"; subtext="#9893a5"
+            blue="#286983"; green="#d7827e"; red="#b4637a"
+            yellow="#ea9d34"; teal="#56949f"; purple="#907aa9"
+        } else if (n === "onelight") {
+            base="#fafafa"; surface="#f3f3f3"; border="#e8e8e8"
+            text="#383a42"; subtext="#a0a1a7"
+            blue="#4078f2"; green="#50a14f"; red="#e45649"
+            yellow="#c18401"; teal="#0184bc"; purple="#a626a4"
         } else {
             // mocha (default)
             base="#1e1e2e"; surface="#181825"; border="#313244"

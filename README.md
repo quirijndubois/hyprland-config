@@ -25,7 +25,7 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 - **Keyboard-driven** - full navigation with arrows, Enter, Escape; reorder the main menu with `Shift+Up`/`Shift+Down` (persisted)
 
 ### Theming & Layout
-- **12 color palettes** - Catppuccin (mocha, macchiato, frappe, latte), Tokyo Night, Gruvbox, Nord, Dracula, Rose Pine, One Dark, Everforest, Solarized Dark - switch instantly with live Kitty terminal color sync
+- **18 color palettes** split into dark and light groups - Dark: Catppuccin Mocha/Macchiato/Frappe, Tokyo Night, Gruvbox, Nord, Dracula, Rose Pine, One Dark, Everforest, Solarized Dark. Light: Catppuccin Latte, Solarized Light, Gruvbox Light, Nord Light, Rose Pine Dawn, One Light - switch instantly with live Kitty terminal color sync
 - **8 bar designs** - default, compact, islands (floating pills), pills (per-module chips on a transparent bar), bold, minimal, clean (sans-serif), hacker
 - **4 Hyprland layouts** - dwindle, master, scrolling, monocle - toggle from settings, applies live
 - **Custom bezier animations** - 5 hand-tuned curves for windows, workspaces, fade, and layers
@@ -38,7 +38,8 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 - **App launcher** - browse `.desktop` entries with icons, launch from the settings overlay
 - **Bluetooth manager** - pair, connect, disconnect devices - all from settings
 - **Clipboard history** - browse and re-copy entries via `cliphist`; searchable from fuzzy finder
-- **System settings** - monitor scale/resolution, enable/disable monitors, mouse sensitivity, natural scroll, scroll factor - applied live via `hyprctl` and persisted to `user-settings.lua`
+- **System settings** - monitor scale/resolution, enable/disable monitors, mouse sensitivity, natural scroll, scroll factor, blur toggle - applied live via `hyprctl` and persisted to `user-settings.lua`
+- **Blur toggle** - enable/disable Hyprland compositor blur from settings; automatically sets Kitty terminal background opacity to 1.0 when blur is off and restores it when blur is back on
 
 ### Lock Screen
 - **Wayland session lock** - centered clock + date, password auth via `unix_chkpwd`, blur background. Lock with `Alt+Delete`.

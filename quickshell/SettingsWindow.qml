@@ -88,6 +88,7 @@ FloatingWindow {
     property real mouseSensitivity: 0.0
     property bool naturalScroll: true
     property real scrollFactor: 0.4
+    property bool blurEnabled: true
     property int selectedMonitorIdx: 0
     property var workspaceRules: []
 
@@ -110,6 +111,7 @@ FloatingWindow {
         items.push({ type: "scroll_factor",  label: "scroll factor" })
         items.push({ type: "section", label: "window" })
         items.push({ type: "nav", label: "layout", icon: "", page: "layout" })
+        items.push({ type: "blur_toggle", label: "blur" })
         return items
     }
 
@@ -128,7 +130,6 @@ FloatingWindow {
             sysMonitorsProc.running = true
             sysSensProc.running = false
             sysSensProc.running = true
-            if (root.systemSettingItems[root.selectedIndex]?.type === "section") root.selectedIndex++
         }
     }
 
@@ -185,6 +186,7 @@ FloatingWindow {
             if (s > 0) results.push({ score: s, type: "wallpaper", label: name, file: f })
         }
         for (const p of paletteOptions) {
+            if (p.type === "section") continue
             const s = Math.max(root.fuzzyScore(searchQuery, p.label), root.fuzzyScore(searchQuery, p.id))
             if (s > 0) results.push({ score: s, type: "palette", label: p.label, id: p.id, swatches: p.swatches })
         }
@@ -237,10 +239,10 @@ FloatingWindow {
     }
 
     readonly property var paletteOptions: [
+        { type: "section", label: "dark" },
         { id: "mocha",       label: "catppuccin mocha",      swatches: ["#89b4fa","#a6e3a1","#f38ba8","#f9e2af","#94e2d5","#cba6f7"] },
         { id: "macchiato",   label: "catppuccin macchiato",  swatches: ["#8aadf4","#a6da95","#ed8796","#eed49f","#8bd5ca","#c6a0f6"] },
         { id: "frappe",      label: "catppuccin frappe",     swatches: ["#8caaee","#a6d189","#e78284","#e5c890","#81c8be","#ca9ee6"] },
-        { id: "latte",       label: "catppuccin latte",      swatches: ["#1e66f5","#40a02b","#d20f39","#df8e1d","#179299","#8839ef"] },
         { id: "tokyo-night", label: "tokyo night",           swatches: ["#7aa2f7","#9ece6a","#f7768e","#e0af68","#73daca","#bb9af7"] },
         { id: "gruvbox",     label: "gruvbox",               swatches: ["#83a598","#b8bb26","#fb4934","#fabd2f","#8ec07c","#d3869b"] },
         { id: "nord",        label: "nord",                  swatches: ["#81a1c1","#a3be8c","#bf616a","#ebcb8b","#88c0d0","#b48ead"] },
@@ -249,6 +251,13 @@ FloatingWindow {
         { id: "onedark",     label: "one dark",              swatches: ["#61afef","#98c379","#e06c75","#e5c07b","#56b6c2","#c678dd"] },
         { id: "everforest",  label: "everforest",            swatches: ["#7fbbb3","#a7c080","#e67e80","#dbbc7f","#83c092","#d699b6"] },
         { id: "solarized",   label: "solarized dark",        swatches: ["#268bd2","#859900","#dc322f","#b58900","#2aa198","#6c71c4"] },
+        { type: "section", label: "light" },
+        { id: "latte",       label: "catppuccin latte",      swatches: ["#1e66f5","#40a02b","#d20f39","#df8e1d","#179299","#8839ef"] },
+        { id: "solarized-light", label: "solarized light",   swatches: ["#268bd2","#859900","#dc322f","#b58900","#2aa198","#6c71c4"] },
+        { id: "gruvbox-light", label: "gruvbox light",       swatches: ["#458588","#689d6a","#cc241d","#d79921","#689d6a","#b16286"] },
+        { id: "nord-light",  label: "nord light",            swatches: ["#5e81ac","#a3be8c","#bf616a","#ebcb8b","#88c0d0","#b48ead"] },
+        { id: "rosepine-dawn", label: "rose pine dawn",      swatches: ["#286983","#d7827e","#b4637a","#ea9d34","#56949f","#907aa9"] },
+        { id: "onelight",    label: "one light",             swatches: ["#4078f2","#50a14f","#e45649","#c18401","#0184bc","#a626a4"] },
     ]
 
     readonly property var designOptions: [
@@ -497,7 +506,8 @@ FloatingWindow {
         command: ["sh", "-c",
             "hyprctl -j getoption input:sensitivity 2>/dev/null; " +
             "hyprctl -j getoption input:touchpad:natural_scroll 2>/dev/null; " +
-            "hyprctl -j getoption input:touchpad:scroll_factor 2>/dev/null"
+            "hyprctl -j getoption input:touchpad:scroll_factor 2>/dev/null; " +
+            "hyprctl -j getoption decoration:blur:enabled 2>/dev/null"
         ]
         stdout: StdioCollector {
             onStreamFinished: {
@@ -511,6 +521,7 @@ FloatingWindow {
                 try { const o = JSON.parse(objects[0]); if (o.float !== undefined) root.mouseSensitivity = Math.round(o.float * 10) / 10 } catch(e) {}
                 try { const o = JSON.parse(objects[1]); if (o.int !== undefined) root.naturalScroll = o.int === 1 } catch(e) {}
                 try { const o = JSON.parse(objects[2]); if (o.float !== undefined) root.scrollFactor = Math.round(o.float * 20) / 20 } catch(e) {}
+                try { const o = JSON.parse(objects[3]); if (o.int !== undefined) root.blurEnabled = o.int === 1 } catch(e) {}
             }
         }
     }
@@ -571,6 +582,8 @@ FloatingWindow {
             lines.push('hl.workspace_rule({ workspace = "' + r.workspace + '", monitor = "' + r.monitor + '" })')
         const ns = root.naturalScroll ? 'true' : 'false'
         lines.push('hl.config({ input = { sensitivity = ' + root.mouseSensitivity + ', touchpad = { natural_scroll = ' + ns + ', scroll_factor = ' + root.scrollFactor + ' } } })')
+        const blur = root.blurEnabled ? 'true' : 'false'
+        lines.push('hl.config({ decoration = { blur = { enabled = ' + blur + ' } } })')
         const args = lines.map(l => "'" + l + "'").join(' ')
         return "printf '%s\\n' " + args + " > \"$HOME/.config/hypr/user-settings.lua\""
     }
@@ -673,6 +686,18 @@ FloatingWindow {
             "hyprctl eval \"hl.config({ input = { touchpad = { scroll_factor = " + val + " } } })\" && " +
             root._writeUserSettings() +
             root._rescaleCmd()
+        ]
+        sysApplyProc.running = false
+        sysApplyProc.running = true
+    }
+
+    function setBlur(val) {
+        root.blurEnabled = val
+        const opacity = val ? "0.6" : "1.0"
+        sysApplyProc.command = ["sh", "-c",
+            "hyprctl eval \"hl.config({ decoration = { blur = { enabled = " + (val ? "true" : "false") + " } } })\" && " +
+            root._writeUserSettings() + " ; " +
+            "for sock in /tmp/kitty-*; do [ -S \"$sock\" ] && kitten @ --to \"unix:$sock\" set-background-opacity --all " + opacity + " 2>/dev/null; done"
         ]
         sysApplyProc.running = false
         sysApplyProc.running = true
@@ -915,9 +940,14 @@ FloatingWindow {
                     root.saveMainItems()
                     mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 } else if (root.selectedIndex > 0) {
-                    root.selectedIndex--
-                    if (root.page === "system" && root.systemSettingItems[root.selectedIndex]?.type === "section" && root.selectedIndex > 0)
-                        root.selectedIndex--
+                    const sectionItems = root.page === "palette" ? root.paletteOptions
+                                       : root.page === "system"  ? root.systemSettingItems
+                                       : null
+                    let target = root.selectedIndex - 1
+                    while (target > 0 && sectionItems && sectionItems[target]?.type === "section")
+                        target--
+                    if (!sectionItems || sectionItems[target]?.type !== "section")
+                        root.selectedIndex = target
                     if (root.page === "main")
                         mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "appearance")
@@ -958,6 +988,7 @@ FloatingWindow {
                 const maxIdx = root.page === "main"          ? root.mainItems.length - 1
                              : root.page === "appearance"     ? root.appearanceItems.length - 1
                              : root.page === "wallpaper"      ? Math.max(0, root.wallpaperFiles.length - 1)
+                             : root.page === "palette"        ? root.paletteOptions.length - 1
                              : root.page === "apps"           ? Math.max(0, root.appsList.length - 1)
                              : root.page === "bluetooth"      ? Math.max(0, root.bluetoothDevices.length - 1)
                              : root.page === "design"         ? root.designOptions.length - 1
@@ -966,7 +997,7 @@ FloatingWindow {
                              : root.page === "clipboard"      ? Math.max(0, root.clipboardItems.length - 1)
                              : root.page === "notifications"  ? Math.max(0, notifListView.count - 1)
                              : root.page === "system"         ? Math.max(0, root.systemSettingItems.length - 1)
-                             : root.paletteOptions.length - 1
+                             : 0
                 if (inSearch) {
                     if (root.selectedSearchIndex < root.searchResults.length - 1) {
                         root.selectedSearchIndex++
@@ -982,8 +1013,11 @@ FloatingWindow {
                     mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 } else if (root.selectedIndex < maxIdx) {
                     root.selectedIndex++
-                    if (root.page === "system" && root.systemSettingItems[root.selectedIndex]?.type === "section" && root.selectedIndex < maxIdx)
-                        root.selectedIndex++
+                    while ((root.page === "system" && root.systemSettingItems[root.selectedIndex]?.type === "section") ||
+                           (root.page === "palette" && root.paletteOptions[root.selectedIndex]?.type === "section")) {
+                        if (root.selectedIndex < maxIdx) root.selectedIndex++
+                        else break
+                    }
                     if (root.page === "main")
                         mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "appearance")
@@ -1038,6 +1072,8 @@ FloatingWindow {
                                 root.setMonitorScale(item.monitor, scales[ni])
                             } else if (item.type === "monitor_toggle") {
                                 root.setMonitorEnabled(item.monitor, !item.monitor.enabled)
+                            } else if (item.type === "blur_toggle") {
+                                root.setBlur(!root.blurEnabled)
                             }
                         }
                         event.accepted = true
@@ -1092,6 +1128,15 @@ FloatingWindow {
             root.navStack = root.navStack.concat([{ page: root.page, index: root.selectedIndex }])
             root.page = pageId
             root.selectedIndex = 0
+            Qt.callLater(function() {
+                const sectionItems = root.page === "palette" ? root.paletteOptions
+                                   : root.page === "system"  ? root.systemSettingItems
+                                   : null
+                if (sectionItems) {
+                    while (root.selectedIndex < sectionItems.length && sectionItems[root.selectedIndex]?.type === "section")
+                        root.selectedIndex++
+                }
+            })
         }
 
         function goBack() {
@@ -1117,7 +1162,8 @@ FloatingWindow {
             } else if (root.page === "wallpaper" && root.wallpaperFiles.length > 0) {
                 root.applyWallpaper(root.wallpaperFiles[root.selectedIndex])
             } else if (root.page === "palette") {
-                Theme.name = root.paletteOptions[root.selectedIndex].id
+                const palette = root.paletteOptions[root.selectedIndex]
+                if (palette && palette.type !== "section") Theme.name = palette.id
             } else if (root.page === "apps") {
                 const app = root.appsList[root.selectedIndex]
                 if (app) { root.launchApp(app.exec, app.terminal); root.closeRequested() }
@@ -1152,6 +1198,8 @@ FloatingWindow {
                     root.setMouseSensitivity(root.mouseSensitivity + 0.1)
                 } else if (item.type === "natural_scroll") {
                     root.setNaturalScroll(!root.naturalScroll)
+                } else if (item.type === "blur_toggle") {
+                    root.setBlur(!root.blurEnabled)
                 } else if (item.type === "scroll_factor") {
                     root.setScrollFactor(root.scrollFactor + 0.05)
                 } else if (item.type === "font_size") {
@@ -1960,6 +2008,11 @@ FloatingWindow {
                                 font.pixelSize: sf - 2
                                 font.bold: true
                             }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: { /* sections are not selectable */ }
+                            }
                         }
 
                         // Interactive row
@@ -2119,6 +2172,21 @@ FloatingWindow {
                                 }
                             }
 
+                            // Toggle for blur
+                            Text {
+                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                                visible: sysDelegate.modelData.type === "blur_toggle"
+                                text: root.blurEnabled ? "[*]" : "[ ]"
+                                color: root.blurEnabled ? Theme.green : Theme.subtext
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: { root.selectedIndex = sysDelegate.index; root.setBlur(!root.blurEnabled) }
+                                }
+                            }
+
                             // Toggle for monitor enable/disable
                             Text {
                                 anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
@@ -2151,6 +2219,13 @@ FloatingWindow {
                                 visible: sysDelegate.modelData.type === "nav"
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: { root.selectedIndex = sysDelegate.index; keyNav.navigateTo(sysDelegate.modelData.page) }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                visible: sysDelegate.modelData.type !== "scale" && sysDelegate.modelData.type !== "sensitivity" && sysDelegate.modelData.type !== "natural_scroll" && sysDelegate.modelData.type !== "scroll_factor" && sysDelegate.modelData.type !== "font_size" && sysDelegate.modelData.type !== "monitor_toggle" && sysDelegate.modelData.type !== "nav"
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: { root.selectedIndex = sysDelegate.index }
                             }
 
                         }
@@ -2651,58 +2726,97 @@ FloatingWindow {
                     clip: true
                     interactive: false
 
-                    delegate: Rectangle {
+                    delegate: Item {
                         required property var modelData
                         required property int index
+                        property bool isSection: paletteDelegate.modelData.type === "section"
+                        property bool isSelected: root.selectedIndex === index
 
                         width: paletteList.width
-                        height: 40
-                        color: root.selectedIndex === index ? Theme.border : "transparent"
+                        height: isSection ? 32 : 40
 
-                        Row {
-                            anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
-                            spacing: 14
+                        id: paletteDelegate
+
+                        // Section header background
+                        Rectangle {
+                            anchors.fill: parent
+                            visible: paletteDelegate.isSection
+                            color: Theme.surface
 
                             Text {
-                                text: root.selectedIndex === index ? ">" : " "
+                                anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                                text: paletteDelegate.modelData.label || ""
                                 color: Theme.blue
                                 font.family: "JetBrains Mono"
-                                font.pixelSize: sf
-                                verticalAlignment: Text.AlignVCenter
+                                font.pixelSize: sf - 2
+                                font.bold: true
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: { /* sections are not selectable */ }
+                            }
+                        }
+
+                        // Palette item (interactive)
+                        Rectangle {
+                            anchors.fill: parent
+                            visible: !paletteDelegate.isSection
+                            color: paletteDelegate.isSelected ? Theme.border : "transparent"
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    root.selectedIndex = paletteDelegate.index
+                                    Theme.name = paletteDelegate.modelData.id
+                                }
+                            }
+
+                            Row {
+                                anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                                spacing: 14
+
+                                Text {
+                                    text: paletteDelegate.isSelected ? ">" : " "
+                                    color: Theme.blue
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: sf
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                Text {
+                                    text: modelData.label
+                                    color: paletteDelegate.isSelected ? Theme.text : Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: sf
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                            }
+
+                            Row {
+                                anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                                spacing: 4
+
+                                Repeater {
+                                    model: modelData.swatches
+                                    delegate: Rectangle {
+                                        required property var modelData
+                                        width: 10; height: 10; radius: 5
+                                        color: modelData
+                                    }
+                                }
                             }
 
                             Text {
-                                text: modelData.label
-                                color: root.selectedIndex === index ? Theme.text : Theme.subtext
+                                anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                                visible: Theme.name === modelData.id
+                                text: "*"
+                                color: Theme.green
                                 font.family: "JetBrains Mono"
                                 font.pixelSize: sf
-                                verticalAlignment: Text.AlignVCenter
                             }
                         }
-
-                        Row {
-                            anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-                            spacing: 4
-
-                            Repeater {
-                                model: modelData.swatches
-                                delegate: Rectangle {
-                                    required property var modelData
-                                    width: 10; height: 10; radius: 5
-                                    color: modelData
-                                }
-                            }
-                        }
-
-                        Text {
-                            anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-                            visible: Theme.name === modelData.id
-                            text: "*"
-                            color: Theme.green
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: sf
-                        }
-
                     }
                 }
             }
