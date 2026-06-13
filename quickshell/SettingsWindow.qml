@@ -1189,6 +1189,10 @@ FloatingWindow {
             root.navStack = root.navStack.concat([{ page: root.page, index: root.selectedIndex }])
             root.page = pageId
             root.selectedIndex = 0
+            if (pageId === "apps") {
+                appsProc.running = false
+                appsProc.running = true
+            }
             Qt.callLater(function() {
                 const sectionItems = root.page === "palette" ? root.paletteOptions
                                    : root.page === "system"  ? root.systemSettingItems
