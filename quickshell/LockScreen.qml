@@ -8,9 +8,16 @@ Item {
     visible: false
 
     property string username: ""
+    property string resolvedDesign: "default"
     signal lockReleased()
 
-    function lock() { wlLock.locked = true }
+    function lock() {
+        const all = ["default", "minimal", "clock", "terminal", "split"]
+        resolvedDesign = Theme.lockDesign === "random"
+            ? all[Math.floor(Math.random() * all.length)]
+            : Theme.lockDesign
+        wlLock.locked = true
+    }
 
     Process {
         command: ["sh", "-c", "id -un"]
@@ -148,7 +155,7 @@ Item {
 
                         // ── default ────────────────────────────────────────
                         Column {
-                            visible: Theme.lockDesign === "default" || Theme.lockDesign === ""
+                            visible: root.resolvedDesign === "default" || root.resolvedDesign === ""
                             anchors.centerIn: parent
                             spacing: 0
 
@@ -223,7 +230,7 @@ Item {
 
                         // ── minimal ────────────────────────────────────────
                         Column {
-                            visible: Theme.lockDesign === "minimal"
+                            visible: root.resolvedDesign === "minimal"
                             anchors.centerIn: parent
                             spacing: 0
 
@@ -263,7 +270,7 @@ Item {
 
                         // ── clock ──────────────────────────────────────────
                         Column {
-                            visible: Theme.lockDesign === "clock"
+                            visible: root.resolvedDesign === "clock"
                             anchors.centerIn: parent
                             spacing: 0
 
@@ -308,7 +315,7 @@ Item {
 
                         // ── terminal ───────────────────────────────────────
                         Column {
-                            visible: Theme.lockDesign === "terminal"
+                            visible: root.resolvedDesign === "terminal"
                             anchors.centerIn: parent
                             spacing: 0
 
@@ -383,7 +390,7 @@ Item {
 
                         // ── split ──────────────────────────────────────────
                         Item {
-                            visible: Theme.lockDesign === "split"
+                            visible: root.resolvedDesign === "split"
                             anchors.centerIn: parent
                             width: 660; height: 130
 

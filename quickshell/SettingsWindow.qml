@@ -266,6 +266,7 @@ FloatingWindow {
         { id: "clock",    label: "clock",    desc: "oversized time face" },
         { id: "terminal", label: "terminal", desc: "console login prompt" },
         { id: "split",    label: "split",    desc: "time left · input right" },
+        { id: "random",   label: "random",   desc: "different design each lock" },
     ]
 
     readonly property var designOptions: [
@@ -3233,6 +3234,17 @@ FloatingWindow {
                                     Rectangle { width: 38; height: 1; color: previewColor; opacity: previewOpacity * 0.5 }
                                     Rectangle { width: 14; height: 3; radius: 1; color: previewColor; opacity: previewOpacity * 0.6 }
                                 }
+                            }
+
+                            // random: dice / question mark preview
+                            Text {
+                                visible: modelData.id === "random"
+                                anchors.centerIn: parent
+                                text: "?"
+                                color: previewColor
+                                opacity: previewOpacity
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: 28; font.bold: true
                             }
 
                             // split: two columns with divider
