@@ -363,6 +363,32 @@ FloatingWindow {
     }
 
     Process {
+        id: extractPaletteProc
+        stderr: StdioCollector {}
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.extractingPalette = false
+                const parts = this.text.trim().split(' ')
+                if (parts.length !== 11) return
+                Theme.base    = parts[0]
+                Theme.surface = parts[1]
+                Theme.border  = parts[2]
+                Theme.text    = parts[3]
+                Theme.subtext = parts[4]
+                Theme.blue    = parts[5]
+                Theme.green   = parts[6]
+                Theme.red     = parts[7]
+                Theme.yellow  = parts[8]
+                Theme.teal    = parts[9]
+                Theme.purple  = parts[10]
+                Theme.updateKittyTheme()
+                Theme.updateFirefoxTheme()
+            }
+        }
+        onRunningChanged: { if (!running) root.extractingPalette = false }
+    }
+
+    Process {
         id: btListProc
         command: ["sh", "-c",
             "conn=$(bluetoothctl devices Connected 2>/dev/null | awk '{print $2}'); " +
@@ -824,6 +850,18 @@ FloatingWindow {
     }
 
     property string pendingWallpaper: ""
+    property bool extractingPalette: false
+
+    function extractWallpaperPalette() {
+        if (root.wallpaperFiles.length === 0 || root.extractingPalette) return
+        const file = root.wallpaperFiles[root.selectedIndex]
+        const python = root.homeDir + "/.conda/envs/pywalfox/bin/python3"
+        const script = root.homeDir + "/.config/quickshell/extract-palette.py"
+        extractPaletteProc.command = [python, script, root.wallpapersDir + file]
+        root.extractingPalette = true
+        extractPaletteProc.running = false
+        extractPaletteProc.running = true
+    }
 
     function applyWallpaper(filename) {
         if (awwwProc.running) {
@@ -1116,6 +1154,12 @@ FloatingWindow {
                     event.accepted = true
                     return
                 }
+            }
+
+            if (event.key === Qt.Key_A && root.page === "wallpaper" && !inSearch) {
+                root.extractWallpaperPalette()
+                event.accepted = true
+                return
             }
 
             if (event.text && event.text.length === 1 && event.text.charCodeAt(0) >= 32) {
@@ -2612,6 +2656,14 @@ FloatingWindow {
                             font.bold: true
                             verticalAlignment: Text.AlignVCenter
                         }
+                    }
+
+                    Text {
+                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                        text: root.extractingPalette ? "analyzing..." : "a: extract palette"
+                        color: root.extractingPalette ? Theme.yellow : Theme.subtext
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: sf - 2
                     }
                 }
 

@@ -26,6 +26,7 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 
 ### Theming & Layout
 - **18 color palettes** split into dark and light groups - Dark: Catppuccin Mocha/Macchiato/Frappe, Tokyo Night, Gruvbox, Nord, Dracula, Rose Pine, One Dark, Everforest, Solarized Dark. Light: Catppuccin Latte, Solarized Light, Gruvbox Light, Nord Light, Rose Pine Dawn, One Light - switch instantly with live color sync to Kitty terminal and Firefox (via [pywalfox](https://github.com/Frewacom/pywalfox))
+- **Wallpaper palette extraction** — press `A` on any wallpaper to automatically extract its dominant colors and apply them as a live palette across the shell, Kitty, and Firefox
 - **8 bar designs** - default, compact, islands (floating pills), pills (per-module chips on a transparent bar), bold, minimal, clean (sans-serif), hacker
 - **4 Hyprland layouts** - dwindle, master, scrolling, monocle - toggle from settings, applies live
 - **Custom bezier animations** - 5 hand-tuned curves for windows, workspaces, fade, and layers
@@ -115,11 +116,11 @@ Palette changes can update Firefox in real-time using [pywalfox](https://github.
 
 ```bash
 conda create -n pywalfox python=3.11 -y
-conda run -n pywalfox pip install pywalfox
+conda run -n pywalfox pip install pywalfox Pillow
 conda run -n pywalfox pywalfox install
 ```
 
-This installs the daemon to `~/.conda/envs/pywalfox/bin/pywalfox`, which is the path hardcoded in `quickshell/Theme.qml`.
+This installs the daemon to `~/.conda/envs/pywalfox/bin/pywalfox` and the Python interpreter used by `quickshell/extract-palette.py` for wallpaper palette extraction — both paths are used by `quickshell/Theme.qml` and `quickshell/SettingsWindow.qml`.
 
 **b. Install the Firefox extension:**
 
