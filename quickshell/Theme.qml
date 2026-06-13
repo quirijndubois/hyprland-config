@@ -8,6 +8,7 @@ Singleton {
 
     property string name:          "mocha"
     property string design:           "default"
+    property string lockDesign:       "default"
     property int    barHeightPadding: 17
     property int    barHeight:        barFontSize + barHeightPadding
     property int    barFontSize:      13
@@ -201,6 +202,12 @@ Singleton {
         saveDesignProc.running = true
     }
 
+    onLockDesignChanged: {
+        saveLockDesignProc.command = ["sh", "-c", "mkdir -p \"$HOME/.config/quickshell\" && printf '%s' '" + lockDesign + "' > $HOME/.config/quickshell/lock-design"]
+        saveLockDesignProc.running = false
+        saveLockDesignProc.running = true
+    }
+
     function saveBarModules() {
         const data = JSON.stringify({
             showClock: root.showClock, showBattery: root.showBattery,
@@ -374,6 +381,7 @@ Singleton {
 
     Process { id: saveProc }
     Process { id: saveDesignProc }
+    Process { id: saveLockDesignProc }
     Process { id: barModulesSaveProc }
     Process { id: saveBarFontSizeProc }
     Process { id: kittyThemeSaveProc }
@@ -419,6 +427,18 @@ Singleton {
             onStreamFinished: {
                 const saved = this.text.trim()
                 if (saved) root.design = saved
+            }
+        }
+    }
+
+    Process {
+        id: loadLockDesignProc
+        command: ["sh", "-c", "cat $HOME/.config/quickshell/lock-design 2>/dev/null"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const saved = this.text.trim()
+                if (saved) root.lockDesign = saved
             }
         }
     }

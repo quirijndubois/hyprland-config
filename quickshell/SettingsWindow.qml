@@ -260,6 +260,14 @@ FloatingWindow {
         { id: "onelight",    label: "one light",             swatches: ["#4078f2","#50a14f","#e45649","#c18401","#0184bc","#a626a4"] },
     ]
 
+    readonly property var lockscreenOptions: [
+        { id: "default",  label: "default",  desc: "clock · date · input" },
+        { id: "minimal",  label: "minimal",  desc: "floating dots · zen" },
+        { id: "clock",    label: "clock",    desc: "oversized time face" },
+        { id: "terminal", label: "terminal", desc: "console login prompt" },
+        { id: "split",    label: "split",    desc: "time left · input right" },
+    ]
+
     readonly property var designOptions: [
         { id: "default",  label: "default",  desc: "JetBrains Mono · flat",          bars: 1, barH: 6  },
         { id: "compact",  label: "compact",  desc: "JetBrains Mono · slim",          bars: 1, barH: 3  },
@@ -307,7 +315,8 @@ FloatingWindow {
         { id: "wallpaper", label: "wallpaper",    icon: "" },
         { id: "palette",   label: "palette",      icon: "" },
         { id: "design",    label: "bar design",   icon: "" },
-        { id: "bar",       label: "bar elements", icon: "" },
+        { id: "bar",        label: "bar elements", icon: "" },
+        { id: "lockscreen", label: "lock screen",  icon: "󰌮" },
     ]
 
     onVisibleChanged: {
@@ -926,7 +935,7 @@ FloatingWindow {
             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
         }
 
-        readonly property var level2Pages: ["wallpaper", "palette", "design", "bar", "layout", "monitor_layout"]
+        readonly property var level2Pages: ["wallpaper", "palette", "design", "bar", "layout", "monitor_layout", "lockscreen"]
         property real subOffset: level2Pages.indexOf(root.page) >= 0 ? 1.0 : 0.0
         Behavior on subOffset {
             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
@@ -1012,6 +1021,8 @@ FloatingWindow {
                         notifListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "system")
                         sysListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "lockscreen")
+                        lockscreenList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 }
                 event.accepted = true
                 return
@@ -1037,6 +1048,7 @@ FloatingWindow {
                              : root.page === "clipboard"      ? Math.max(0, root.clipboardItems.length - 1)
                              : root.page === "notifications"  ? Math.max(0, notifListView.count - 1)
                              : root.page === "system"         ? Math.max(0, root.systemSettingItems.length - 1)
+                             : root.page === "lockscreen"     ? root.lockscreenOptions.length - 1
                              : 0
                 if (inSearch) {
                     if (root.selectedSearchIndex < root.searchResults.length - 1) {
@@ -1082,6 +1094,8 @@ FloatingWindow {
                         notifListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                     else if (root.page === "system")
                         sysListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    else if (root.page === "lockscreen")
+                        lockscreenList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
                 }
                 event.accepted = true
                 return
@@ -1219,7 +1233,10 @@ FloatingWindow {
             } else if (root.page === "design") {
                 const d = root.designOptions[root.selectedIndex]
                 if (d) Theme.design = d.id
-            }             else if (root.page === "layout") {
+            } else if (root.page === "lockscreen") {
+                const ld = root.lockscreenOptions[root.selectedIndex]
+                if (ld) Theme.lockDesign = ld.id
+            } else if (root.page === "layout") {
                 const l = root.layoutOptions[root.selectedIndex]
                 if (l) root.applyLayout(l.id)
             } else if (root.page === "bar") {
@@ -3077,6 +3094,167 @@ FloatingWindow {
                             font.pixelSize: sf
                         }
 
+                    }
+                }
+            }
+
+            // ── Lock Screen ───────────────────────────────────
+            Item {
+                anchors.fill: parent
+                visible: root.activeSubPage === "lockscreen"
+
+                Rectangle {
+                    id: lockscreenHeader
+                    width: parent.width
+                    height: 44
+                    color: Theme.surface
+
+                    Row {
+                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                        spacing: 14
+
+                        Text {
+                            text: "< back"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 1
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Text {
+                            text: "lock screen"
+                            color: Theme.purple
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf + 1
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+                }
+
+                Rectangle { id: lockscreenDivider; anchors.top: lockscreenHeader.bottom; width: parent.width; height: 1; color: Theme.border }
+
+                ListView {
+                    id: lockscreenList
+                    anchors { left: parent.left; right: parent.right; top: lockscreenDivider.bottom; bottom: parent.bottom }
+                    model: root.lockscreenOptions
+                    clip: true
+                    interactive: false
+
+                    delegate: Rectangle {
+                        required property var modelData
+                        required property int index
+
+                        width: lockscreenList.width
+                        height: 60
+                        color: root.selectedIndex === index ? Theme.border : "transparent"
+
+                        property bool active: root.selectedIndex === index
+                        property color previewColor: active ? Theme.blue : Theme.subtext
+                        property real previewOpacity: active ? 0.7 : 0.35
+
+                        Row {
+                            anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                            spacing: 14
+
+                            Text {
+                                text: active ? ">" : " "
+                                color: Theme.blue
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            Column {
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 3
+
+                                Text {
+                                    text: modelData.label
+                                    color: active ? Theme.text : Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: sf
+                                }
+
+                                Text {
+                                    text: modelData.desc
+                                    color: Theme.purple
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: sf - 3
+                                }
+                            }
+                        }
+
+                        // Visual preview schematic
+                        Item {
+                            anchors { right: parent.right; rightMargin: 56; verticalCenter: parent.verticalCenter }
+                            width: 62; height: 44
+
+                            // default: clock block + separator + password box
+                            Column {
+                                visible: modelData.id === "default"
+                                anchors.centerIn: parent
+                                spacing: 3
+                                Rectangle { width: 54; height: 14; radius: 2; color: previewColor; opacity: previewOpacity }
+                                Rectangle { width: 54; height: 1;  color: previewColor; opacity: previewOpacity * 0.5 }
+                                Rectangle { width: 54; height: 12; radius: 2; color: previewColor; opacity: previewOpacity * 0.6 }
+                            }
+
+                            // minimal: floating pill
+                            Rectangle {
+                                visible: modelData.id === "minimal"
+                                anchors.centerIn: parent
+                                width: 46; height: 16; radius: 8
+                                color: "transparent"; border.width: 1
+                                border.color: previewColor; opacity: previewOpacity
+                            }
+
+                            // clock: large time block + small pill
+                            Column {
+                                visible: modelData.id === "clock"
+                                anchors.centerIn: parent
+                                spacing: 4
+                                Rectangle { width: 54; height: 22; radius: 2; color: previewColor; opacity: previewOpacity }
+                                Rectangle { width: 54; height: 10; radius: 5; color: previewColor; opacity: previewOpacity * 0.6 }
+                            }
+
+                            // terminal: card outline with lines
+                            Rectangle {
+                                visible: modelData.id === "terminal"
+                                anchors.centerIn: parent
+                                width: 54; height: 40; radius: 4
+                                color: "transparent"; border.width: 1
+                                border.color: previewColor; opacity: previewOpacity
+
+                                Column {
+                                    anchors { left: parent.left; top: parent.top; margins: 5 }
+                                    spacing: 4
+                                    Rectangle { width: 22; height: 3; radius: 1; color: previewColor; opacity: previewOpacity }
+                                    Rectangle { width: 38; height: 1; color: previewColor; opacity: previewOpacity * 0.5 }
+                                    Rectangle { width: 14; height: 3; radius: 1; color: previewColor; opacity: previewOpacity * 0.6 }
+                                }
+                            }
+
+                            // split: two columns with divider
+                            Item {
+                                visible: modelData.id === "split"
+                                anchors.centerIn: parent
+                                width: 50; height: 36
+
+                                Rectangle { x: 0;  y: 1;  width: 22; height: 34; radius: 2; color: previewColor; opacity: previewOpacity }
+                                Rectangle { x: 24; y: 3;  width: 1;  height: 30; color: previewColor; opacity: previewOpacity * 0.5 }
+                                Rectangle { x: 27; y: 9;  width: 22; height: 18; radius: 2; color: previewColor; opacity: previewOpacity * 0.6 }
+                            }
+                        }
+
+                        Text {
+                            anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                            visible: Theme.lockDesign === modelData.id
+                            text: "*"
+                            color: Theme.green
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf
+                        }
                     }
                 }
             }
