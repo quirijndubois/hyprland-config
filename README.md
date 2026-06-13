@@ -15,7 +15,7 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 
 ### Settings Overlay (`Alt+S`)
 - **Fuzzy search** across wallpapers, palettes, designs, layouts, bar modules, apps, Bluetooth devices, clipboard history, monitors, and system settings
-- **Appearance page** - select palettes, bar designs, and toggle individual bar modules (menu, clock, battery, CPU, memory, GPU, workspaces, music, audio, Bluetooth, network, sleep inhibit, tray)
+- **Appearance page** - select palettes, bar designs, and toggle individual bar modules (menu, clock, battery, CPU, memory, GPU, workspaces, music, audio, Bluetooth, network, sleep inhibit, tray); in the wallpaper picker press `A` to extract a palette directly from the image
 - **Monitor layout page** - enable/disable monitors, set resolution/scale/position, assign workspaces to specific monitors
 - **System settings page** - adjust monitor scales, mouse sensitivity, natural scroll, scroll factor, window layout (dwindle/master/scrolling/monocle)
 - **Notification history** - view recent notifications, manually dismiss, or clear all
@@ -25,8 +25,9 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 - **Keyboard-driven** - full navigation with arrows, Enter, Escape; reorder the main menu with `Shift+Up`/`Shift+Down` (persisted)
 
 ### Theming & Layout
-- **18 color palettes** split into dark and light groups - Dark: Catppuccin Mocha/Macchiato/Frappe, Tokyo Night, Gruvbox, Nord, Dracula, Rose Pine, One Dark, Everforest, Solarized Dark. Light: Catppuccin Latte, Solarized Light, Gruvbox Light, Nord Light, Rose Pine Dawn, One Light - switch instantly with live color sync to Kitty terminal and Firefox (via [pywalfox](https://github.com/Frewacom/pywalfox))
-- **Wallpaper palette extraction** — press `A` on any wallpaper to automatically extract its dominant colors and apply them as a live palette across the shell, Kitty, and Firefox
+- **18 color palettes** split into dark and light groups - Dark: Catppuccin Mocha/Macchiato/Frappe, Tokyo Night, Gruvbox, Nord, Dracula, Rose Pine, One Dark, Everforest, Solarized Dark. Light: Catppuccin Latte, Solarized Light, Gruvbox Light, Nord Light, Rose Pine Dawn, One Light - switch with smooth 500ms animated transitions and live sync to Kitty, Firefox, and system dark/light mode (GTK3/4 apps, Qt/Dolphin via qt6ct)
+- **Wallpaper palette extraction** — press `A` on any wallpaper to automatically extract its dominant colors and apply them as a live palette across the shell, Kitty, Firefox, and system dark mode; palette is WCAG-contrast-enforced (text ≥ 7:1, accents ≥ 4.5:1) and randomized so each extraction differs
+- **Random wallpaper shortcut** — `Alt+R` picks a random wallpaper from `~/wallpapers/`, applies it with a random animated transition, and immediately extracts and applies its color palette system-wide
 - **8 bar designs** - default, compact, islands (floating pills), pills (per-module chips on a transparent bar), bold, minimal, clean (sans-serif), hacker
 - **4 Hyprland layouts** - dwindle, master, scrolling, monocle - toggle from settings, applies live
 - **Custom bezier animations** - 5 hand-tuned curves for windows, workspaces, fade, and layers
@@ -75,6 +76,7 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 | `Alt + Shift + H / J / K / L` | Move window |
 | `Alt + Ctrl + H / J / K / L` | Resize window |
 | `Alt + I` | Toggle split layout |
+| `Alt + R` | Random wallpaper + extracted color palette |
 | `Alt + C` | Color picker (hyprpicker) |
 | `Alt + Shift + C` | Region screenshot |
 | `Alt + = / -` | Zoom in / out |
@@ -86,8 +88,10 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 
 ```bash
 # Arch Linux
-paru -S hyprland quickshell-git kitty awww hyprlock hypridle hyprshot hyprpicker wl-clipboard cliphist
+paru -S hyprland quickshell-git kitty awww hyprlock hypridle hyprshot hyprpicker wl-clipboard cliphist kconfig
 ```
+
+`kconfig` provides `kwriteconfig6`, used to update the qt6ct color scheme when the palette changes.
 
 > **Do not install dunst.** Quickshell registers itself as the `org.freedesktop.Notifications` D-Bus service. If dunst is already installed and its systemd unit is active, it will claim that name first and quickshell won't receive notifications. Mask it to prevent this:
 > ```bash
@@ -129,6 +133,8 @@ This installs the daemon to `~/.conda/envs/pywalfox/bin/pywalfox` and the Python
 **c. Restart Firefox.**
 
 After that, palette changes in the settings overlay automatically update Firefox with no further interaction needed.
+
+> **Note:** System dark/light mode (GTK apps, Dolphin, other Qt apps) updates immediately for new app launches. Running Qt apps need a restart to pick up the new color scheme; GTK apps respond live via `settings.ini`.
 
 ### 4. Wallpapers
 

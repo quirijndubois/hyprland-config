@@ -54,6 +54,12 @@ ShellRoot {
         function hide()   { root.barVisible = false }
     }
 
+    IpcHandler {
+        target: "theme"
+
+        function setCustom() { Theme.loadCustomPalette() }
+    }
+
     LockScreen {
         id: lockScreen
         onLockReleased: root.sessionLocked = false

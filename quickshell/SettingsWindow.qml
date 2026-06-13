@@ -370,6 +370,7 @@ FloatingWindow {
                 root.extractingPalette = false
                 const parts = this.text.trim().split(' ')
                 if (parts.length !== 11) return
+                Theme._target = { base: parts[0], surface: parts[1], border: parts[2], text: parts[3], subtext: parts[4], blue: parts[5], green: parts[6], red: parts[7], yellow: parts[8], teal: parts[9], purple: parts[10] }
                 Theme.base    = parts[0]
                 Theme.surface = parts[1]
                 Theme.border  = parts[2]
@@ -383,6 +384,7 @@ FloatingWindow {
                 Theme.purple  = parts[10]
                 Theme.updateKittyTheme()
                 Theme.updateFirefoxTheme()
+                Theme.updateSystemColorScheme()
             }
         }
         onRunningChanged: { if (!running) root.extractingPalette = false }
