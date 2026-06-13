@@ -15,7 +15,7 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 
 ### Settings Overlay (`Alt+S`)
 - **Fuzzy search** across wallpapers, palettes, designs, layouts, bar modules, apps, Bluetooth devices, clipboard history, monitors, and system settings
-- **Appearance page** - select palettes, bar designs, and toggle individual bar modules (menu, clock, battery, CPU, memory, GPU, workspaces, music, audio, Bluetooth, network, sleep inhibit, tray); in the wallpaper picker press `A` to extract a palette directly from the image
+- **Appearance page** - select palettes, bar designs, lock screen designs, and toggle individual bar modules (menu, clock, battery, CPU, memory, GPU, workspaces, music, audio, Bluetooth, network, sleep inhibit, tray); in the wallpaper picker press `A` to extract a palette directly from the image
 - **Monitor layout page** - enable/disable monitors, set resolution/scale/position, assign workspaces to specific monitors
 - **System settings page** - adjust monitor scales, mouse sensitivity, natural scroll, scroll factor, window layout (dwindle/master/scrolling/monocle)
 - **Notification history** - view recent notifications, manually dismiss, or clear all
@@ -44,7 +44,10 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 - **Blur toggle** - enable/disable Hyprland compositor blur from settings; automatically sets Kitty terminal background opacity to 1.0 when blur is off and restores it when blur is back on
 
 ### Lock Screen
-- **Wayland session lock** - centered clock + date, password auth via `unix_chkpwd`, blur background. Lock with `Alt+Delete`.
+- **Wayland session lock** - password auth via `unix_chkpwd`. Lock with `Alt+Delete`.
+- **5 designs** - default (clock + date + username), minimal (floating dots only), clock (oversized 164px time face), terminal (console-style prompt card), split (time left, input right) — plus a **random** mode that picks a different design on every lock
+- **Typing animations** - each dot slides in from the previous dot's position; the password box pulses on every keystroke; wrong password triggers a damped horizontal shake
+- **Design persists** across restarts; switch from Settings → Appearance → lock screen
 
 ### Input & Gestures
 - **3-finger swipe** - horizontal gesture switches workspaces
