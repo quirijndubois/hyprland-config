@@ -25,7 +25,7 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 - **Keyboard-driven** - full navigation with arrows, Enter, Escape; reorder the main menu with `Shift+Up`/`Shift+Down` (persisted)
 
 ### Theming & Layout
-- **18 color palettes** split into dark and light groups - Dark: Catppuccin Mocha/Macchiato/Frappe, Tokyo Night, Gruvbox, Nord, Dracula, Rose Pine, One Dark, Everforest, Solarized Dark. Light: Catppuccin Latte, Solarized Light, Gruvbox Light, Nord Light, Rose Pine Dawn, One Light - switch instantly with live Kitty terminal color sync
+- **18 color palettes** split into dark and light groups - Dark: Catppuccin Mocha/Macchiato/Frappe, Tokyo Night, Gruvbox, Nord, Dracula, Rose Pine, One Dark, Everforest, Solarized Dark. Light: Catppuccin Latte, Solarized Light, Gruvbox Light, Nord Light, Rose Pine Dawn, One Light - switch instantly with live color sync to Kitty terminal and Firefox (via [pywalfox](https://github.com/Frewacom/pywalfox))
 - **8 bar designs** - default, compact, islands (floating pills), pills (per-module chips on a transparent bar), bold, minimal, clean (sans-serif), hacker
 - **4 Hyprland layouts** - dwindle, master, scrolling, monocle - toggle from settings, applies live
 - **Custom bezier animations** - 5 hand-tuned curves for windows, workspaces, fade, and layers
@@ -107,7 +107,29 @@ This syncs configs for `hypr`, `kitty`, and `quickshell` to `~/.config/`. Use `-
 ./install.sh --watch
 ```
 
-### 3. Wallpapers
+### 3. Firefox color sync (optional)
+
+Palette changes can update Firefox in real-time using [pywalfox](https://github.com/Frewacom/pywalfox).
+
+**a. Install the native messaging host in a dedicated conda environment:**
+
+```bash
+conda create -n pywalfox python=3.11 -y
+conda run -n pywalfox pip install pywalfox
+conda run -n pywalfox pywalfox install
+```
+
+This installs the daemon to `~/.conda/envs/pywalfox/bin/pywalfox`, which is the path hardcoded in `quickshell/Theme.qml`.
+
+**b. Install the Firefox extension:**
+
+[addons.mozilla.org/firefox/addon/pywalfox](https://addons.mozilla.org/firefox/addon/pywalfox/)
+
+**c. Restart Firefox.**
+
+After that, palette changes in the settings overlay automatically update Firefox with no further interaction needed.
+
+### 4. Wallpapers
 
 Drop images into `wallpapers/` - they appear immediately in the settings wallpaper picker.
 

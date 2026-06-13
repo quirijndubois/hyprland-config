@@ -171,6 +171,7 @@ Singleton {
     Component.onCompleted: {
         applyPalette(name)
         updateKittyTheme()
+        updateFirefoxTheme()
     }
 
     onNameChanged: {
@@ -179,6 +180,7 @@ Singleton {
         saveProc.running = false
         saveProc.running = true
         updateKittyTheme()
+        updateFirefoxTheme()
     }
 
     onDesignChanged: {
@@ -203,6 +205,32 @@ Singleton {
         barModulesSaveProc.command = ["sh", "-c", "mkdir -p \"$HOME/.config/quickshell\" && printf '%s' '" + escaped + "' > $HOME/.config/quickshell/bar-modules"]
         barModulesSaveProc.running = false
         barModulesSaveProc.running = true
+    }
+
+    function updateFirefoxTheme() {
+        const json = '{"wallpaper":"","colors":{"color0":"' + root.surface +
+            '","color1":"' + root.red +
+            '","color2":"' + root.green +
+            '","color3":"' + root.yellow +
+            '","color4":"' + root.blue +
+            '","color5":"' + root.purple +
+            '","color6":"' + root.teal +
+            '","color7":"' + root.text +
+            '","color8":"' + root.subtext +
+            '","color9":"' + root.red +
+            '","color10":"' + root.green +
+            '","color11":"' + root.yellow +
+            '","color12":"' + root.blue +
+            '","color13":"' + root.purple +
+            '","color14":"' + root.teal +
+            '","color15":"' + root.text + '"}}'
+        const escaped = json.replace(/'/g, "'\\''")
+        firefoxThemeSaveProc.command = ["sh", "-c",
+            "mkdir -p \"$HOME/.cache/wal\" && printf '%s' '" + escaped + "' > \"$HOME/.cache/wal/colors.json\" && " +
+            "$HOME/.conda/envs/pywalfox/bin/pywalfox update 2>/dev/null || true"
+        ]
+        firefoxThemeSaveProc.running = false
+        firefoxThemeSaveProc.running = true
     }
 
     function updateKittyTheme() {
@@ -262,6 +290,7 @@ Singleton {
     Process { id: barModulesSaveProc }
     Process { id: saveBarFontSizeProc }
     Process { id: kittyThemeSaveProc }
+    Process { id: firefoxThemeSaveProc }
 
     Process {
         id: loadProc
