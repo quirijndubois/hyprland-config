@@ -55,4 +55,4 @@ title: Keybinds
 
 ---
 
-[← Configuration](configuration.html) • [Customization →](customization.html)
+[← Requirements](requirements.html) • [Hyprland →](hyprland.html)

@@ -24,10 +24,10 @@ Open **Settings → Appearance** and select any palette. The transition animates
 ### System Sync
 
 Every palette change automatically updates:
-- **Kitty** — via `update-kitty-colors.sh` over Unix sockets
-- **Firefox** — via pywalfox (if installed)
-- **GTK** — writes `~/.config/gtk-3.0/settings.ini` and `gtk-4.0/settings.ini` with `gtk-application-prefer-dark-theme`
-- **Qt/Dolphin** — writes a qt6ct color scheme via `kwriteconfig6`
+- **Kitty** - via `update-kitty-colors.sh` over Unix sockets
+- **Firefox** - via pywalfox (if installed)
+- **GTK** - writes `~/.config/gtk-3.0/settings.ini` and `gtk-4.0/settings.ini` with `gtk-application-prefer-dark-theme`
+- **Qt/Dolphin** - writes a qt6ct color scheme via `kwriteconfig6`
 
 ### Bar Designs
 
@@ -41,7 +41,7 @@ The theme also controls the bar's visual style. `Theme.design` is read by `shell
 
 ### Singleton Architecture
 
-`Theme.qml` is a `pragma Singleton` — a single instance shared across all QML files. Any file can read `Theme.base`, `Theme.accent`, etc. directly without passing references.
+`Theme.qml` is a `pragma Singleton` - a single instance shared across all QML files. Any file can read `Theme.base`, `Theme.accent`, etc. directly without passing references.
 
 ### Animated Color Properties
 
@@ -117,4 +117,4 @@ Process {
 
 ---
 
-[← Palette Extraction](palette-extraction.html) • [Bar →](bar.html)
+[← IPC & Shell Root](ipc.html) • [Palette Extraction →](palette-extraction.html)

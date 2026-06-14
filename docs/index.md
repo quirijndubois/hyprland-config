@@ -19,10 +19,10 @@ cd Qaskade
 
 ## Getting Started
 
-- [Installation](installation.html) — dependencies, setup steps, Firefox sync
-- [Install Script](install-script.html) — how `install.sh` works, watch mode, what gets skipped
-- [Requirements](requirements.html) — full dependency list
-- [Keybinds](keybinds.html) — all keybindings
+- [Installation](installation.html) - dependencies, setup steps, Firefox sync
+- [Install Script](install-script.html) - how `install.sh` works, watch mode, what gets skipped
+- [Requirements](requirements.html) - full dependency list
+- [Keybinds](keybinds.html) - all keybindings
 
 ---
 
@@ -30,9 +30,9 @@ cd Qaskade
 
 Every file in the repo that gets synced to `~/.config/`:
 
-- [Hyprland](hyprland.html) — monitors, autostart, animations, keybinds, window rules
-- [Hypridle](hypridle.html) — idle timeouts, display sleep, auto-lock
-- [Kitty](kitty.html) — terminal opacity, remote control, live color sync
+- [Hyprland](hyprland.html) - monitors, autostart, animations, keybinds, window rules
+- [Hypridle](hypridle.html) - idle timeouts, display sleep, auto-lock
+- [Kitty](kitty.html) - terminal opacity, remote control, live color sync
 
 ---
 
@@ -40,23 +40,23 @@ Every file in the repo that gets synced to `~/.config/`:
 
 The Quickshell-based shell, each documented with a user guide and internal implementation details:
 
-- [Bar](bar.html) — the status bar, hover popup system, bar designs, multi-monitor
-- [Bar Modules](bar-modules.html) — CPU, memory, GPU, audio, music, battery, clock, Bluetooth, network, workspaces, tray
-- [Notifications](notifications.html) — D-Bus notification server, in-bar display, history
-- [Lock Screen](lock-screen.html) — Wayland session lock, 5 designs, animations, authentication
-- [Settings Overlay](settings-overlay.html) — fuzzy search, all pages, filesystem browser, math evaluator
-- [IPC & Shell Root](ipc.html) — how keybinds and scripts communicate with the running shell
+- [Bar](bar.html) - the status bar, hover popup system, bar designs, multi-monitor
+- [Bar Modules](bar-modules.html) - CPU, memory, GPU, audio, music, battery, clock, Bluetooth, network, workspaces, tray
+- [Notifications](notifications.html) - D-Bus notification server, in-bar display, history
+- [Lock Screen](lock-screen.html) - Wayland session lock, 5 designs, animations, authentication
+- [Settings Overlay](settings-overlay.html) - fuzzy search, all pages, filesystem browser, math evaluator
+- [IPC & Shell Root](ipc.html) - how keybinds and scripts communicate with the running shell
 
 ---
 
 ## Theming
 
-- [Theme Engine](theme-engine.html) — animated palette switching, system-wide sync, bar design system
-- [Palette Extraction](palette-extraction.html) — extracting colors from wallpapers, WCAG enforcement, jitter
-- [Palettes](themes.html) — all 18 built-in color themes
+- [Theme Engine](theme-engine.html) - animated palette switching, system-wide sync, bar design system
+- [Palette Extraction](palette-extraction.html) - extracting colors from wallpapers, WCAG enforcement, jitter
+- [Palettes](themes.html) - all 18 built-in color themes
 
 ---
 
 ## Help
 
-- [Troubleshooting](troubleshooting.html) — common issues and fixes
+- [Troubleshooting](troubleshooting.html) - common issues and fixes

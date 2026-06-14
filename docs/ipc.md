@@ -103,4 +103,4 @@ Process {
 
 ---
 
-[← Settings Overlay](settings-overlay.html) • [Home →](index.html)
+[← Settings Overlay](settings-overlay.html) • [Theme Engine →](theme-engine.html)

@@ -19,11 +19,11 @@ The status bar is a Quickshell `PanelWindow` anchored to the top of each monitor
 
 Modules are arranged in three groups:
 
-**Left** — Menu, Clock, Battery, CPU, Memory, GPU
+**Left** - Menu, Clock, Battery, CPU, Memory, GPU
 
-**Center** — Workspaces (also shows notification summaries and clipboard confirmations)
+**Center** - Workspaces (also shows notification summaries and clipboard confirmations)
 
-**Right** — Music, Audio, Bluetooth, Network, Sleep Inhibit, System Tray
+**Right** - Music, Audio, Bluetooth, Network, Sleep Inhibit, System Tray
 
 Each module can be independently shown or hidden via **Settings → Appearance**.
 
@@ -108,7 +108,7 @@ property real popupH: 104
 property var activeScreen: null
 ```
 
-Each module calls `BarHover.show(id, component, x, height, screen)` on hover. A 180ms `hideTimer` fires on mouse leave — `keepAlive()` cancels it if the cursor enters the popup card.
+Each module calls `BarHover.show(id, component, x, height, screen)` on hover. A 180ms `hideTimer` fires on mouse leave - `keepAlive()` cancels it if the cursor enters the popup card.
 
 ### Dual-Loader Slide
 
@@ -121,7 +121,7 @@ Module A → Module B:
   activeLoader flips between 0 and 1
 ```
 
-Slide direction is determined by comparing the new `anchorX` to the previous one — moving right slides in from the right.
+Slide direction is determined by comparing the new `anchorX` to the previous one - moving right slides in from the right.
 
 ### BarText
 
@@ -133,4 +133,4 @@ Slide direction is determined by comparing the new `anchorX` to the previous one
 
 ---
 
-[← Theme Engine](theme-engine.html) • [Notifications →](notifications.html)
+[← Kitty](kitty.html) • [Bar Modules →](bar-modules.html)

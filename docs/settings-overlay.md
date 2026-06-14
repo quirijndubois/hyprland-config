@@ -5,7 +5,7 @@ title: Settings Overlay
 
 # Settings Overlay
 
-The settings overlay is Qaskade's central control panel — a floating window with fuzzy search across all configuration options.
+The settings overlay is Qaskade's central control panel - a floating window with fuzzy search across all configuration options.
 
 ---
 
@@ -43,9 +43,9 @@ The settings overlay is Qaskade's central control panel — a floating window wi
 
 ### Special Search Behaviors
 
-- **Absolute path** (starts with `/` or `~/`) — switches to filesystem browser mode, navigating directories. `Enter` opens the file with `xdg-open`.
-- **Math expression** (`5 * (3 + 2)`, `2^16`) — evaluates and shows result. `Enter` copies the result to clipboard.
-- **No results** — shows a "search web" fallback that opens DuckDuckGo.
+- **Absolute path** (starts with `/` or `~/`) - switches to filesystem browser mode, navigating directories. `Enter` opens the file with `xdg-open`.
+- **Math expression** (`5 * (3 + 2)`, `2^16`) - evaluates and shows result. `Enter` copies the result to clipboard.
+- **No results** - shows a "search web" fallback that opens DuckDuckGo.
 
 ---
 
@@ -117,4 +117,4 @@ The order of items in the main menu is stored in `~/.config/quickshell/main-item
 
 ---
 
-[← Palette Extraction](palette-extraction.html) • [Lock Screen →](lock-screen.html)
+[← Lock Screen](lock-screen.html) • [IPC & Shell Root →](ipc.html)

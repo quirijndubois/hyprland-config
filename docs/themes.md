@@ -176,4 +176,4 @@ Extracted palettes are automatically adjusted to meet these standards.
 
 ---
 
-[← Customization](customization.html) • [Configuration →](configuration.html)
+[← Palette Extraction](palette-extraction.html) • [Troubleshooting →](troubleshooting.html)

@@ -5,7 +5,7 @@ title: Hypridle
 
 # Hypridle
 
-Hypridle manages idle timeouts — turning off displays and locking the session after periods of inactivity.
+Hypridle manages idle timeouts - turning off displays and locking the session after periods of inactivity.
 
 ---
 
@@ -54,7 +54,7 @@ listener {
 
 Runs immediately when the system suspends. Uses Quickshell IPC (`qs ipc call lock lock`) to engage the Wayland session lock before the system sleeps, ensuring the screen is locked on wake.
 
-Also uses `solaar` to disable the `MX Mechanical Mini` keyboard backlight on sleep and re-enable it on wake. The `solaar` commands are specific to this hardware — remove or adapt them for your setup.
+Also uses `solaar` to disable the `MX Mechanical Mini` keyboard backlight on sleep and re-enable it on wake. The `solaar` commands are specific to this hardware - remove or adapt them for your setup.
 
 ### Display Listener (300s)
 

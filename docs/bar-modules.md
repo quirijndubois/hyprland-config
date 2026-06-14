@@ -43,7 +43,7 @@ where `dIdle = idle + iowait` and `dTotal` is sum of all fields. Previous snapsh
 
 **User:** Shows `bat 87%`, `bat +87%` (charging), or `bat =87%` (full). Hover for a percentage bar and time remaining/to full.
 
-**Internals:** Uses `Quickshell.Services.UPower` — Quickshell's native UPower D-Bus binding. The `UPower.displayDevice` represents the primary battery. Percentage is read from `device.percentage` (normalized to 0–100 with an energy fallback if the value is in 0–1 range). Time remaining comes from `device.timeToEmpty` / `device.timeToFull` (seconds), formatted to `Xh Ym`. State enum `UPowerDeviceState` drives the prefix and bar color: green → yellow at 40%, yellow → red at 20%.
+**Internals:** Uses `Quickshell.Services.UPower` - Quickshell's native UPower D-Bus binding. The `UPower.displayDevice` represents the primary battery. Percentage is read from `device.percentage` (normalized to 0–100 with an energy fallback if the value is in 0–1 range). Time remaining comes from `device.timeToEmpty` / `device.timeToFull` (seconds), formatted to `Xh Ym`. State enum `UPowerDeviceState` drives the prefix and bar color: green → yellow at 40%, yellow → red at 20%.
 
 ---
 
@@ -56,7 +56,7 @@ where `dIdle = idle + iowait` and `dTotal` is sum of all fields. Previous snapsh
 Qt.formatTime(new Date(), "hh:mm")
 Qt.formatDate(new Date(), "dddd, MMMM d")
 ```
-No system calls — all in-process.
+No system calls - all in-process.
 
 ---
 
@@ -66,7 +66,7 @@ No system calls — all in-process.
 
 **Internals:** Uses Quickshell's PipeWire binding. `Pipewire.defaultAudioSink` is kept alive with `PwObjectTracker`. Per-app streams are collected by watching `Pipewire.nodes` for `PwNodeType.AudioOutStream`. Node changes are debounced with `Qt.callLater` to batch rapid updates into a single refresh.
 
-Peak meters use `PwNodePeakMonitor` per stream — enabled only when `BarHover.activeModule === "audio"`. Bar turns red above 85% peak. Master volume slider allows dragging to 150% (red fill above 100%). Popup height is dynamic: 104px with no streams, 264px with streams.
+Peak meters use `PwNodePeakMonitor` per stream - enabled only when `BarHover.activeModule === "audio"`. Bar turns red above 85% peak. Master volume slider allows dragging to 150% (red fill above 100%). Popup height is dynamic: 104px with no streams, 264px with streams.
 
 ---
 
@@ -88,7 +88,7 @@ Each bar has a different frequency and offset to avoid lockstep movement. Seek p
 
 **User:** Shows `bt off`, `bt on`, or `bt 2` (connected device count). Hover to see connected device names and a toggle. Click opens `blueman-manager`.
 
-**Internals:** Uses Quickshell's native `Quickshell.Bluetooth` binding — no shell commands. `Bluetooth.defaultAdapter` exposes the adapter state and device list. Connected device count is maintained by a `Repeater` over `defaultAdapter.devices`, watching each device's `connected` property with `onConnChanged`. `refreshCount()` is called whenever any device's connection state changes.
+**Internals:** Uses Quickshell's native `Quickshell.Bluetooth` binding - no shell commands. `Bluetooth.defaultAdapter` exposes the adapter state and device list. Connected device count is maintained by a `Repeater` over `defaultAdapter.devices`, watching each device's `connected` property with `onConnChanged`. `refreshCount()` is called whenever any device's connection state changes.
 
 Toggle in the popup sets `Bluetooth.defaultAdapter.enabled` directly.
 
@@ -101,7 +101,7 @@ Toggle in the popup sets `Bluetooth.defaultAdapter.enabled` directly.
 **Internals:** Two shell processes run at startup and every 10s:
 
 - **SSID/type:** `iwgetid -r` gets the WiFi SSID. If empty, `nmcli dev` checks for an active ethernet connection.
-- **IP:** `ip -4 addr show $(ip route | awk '/default/{print $5; exit}')` — resolves the default route's interface then reads its IPv4 address.
+- **IP:** `ip -4 addr show $(ip route | awk '/default/{print $5; exit}')` - resolves the default route's interface then reads its IPv4 address.
 
 SSID is stored in full (`ssidFull`) for the popup, displayed truncated in the bar.
 
@@ -122,7 +122,7 @@ IdleInhibitor {
 }
 ```
 
-When `enabled` is true, the compositor is notified via the protocol and suppresses all idle timeouts — no `systemd-inhibit` or shell commands involved.
+When `enabled` is true, the compositor is notified via the protocol and suppresses all idle timeouts - no `systemd-inhibit` or shell commands involved.
 
 ---
 
@@ -130,7 +130,7 @@ When `enabled` is true, the compositor is notified via the protocol and suppress
 
 **User:** Shows 16×16 icons for any `StatusNotifierItem` application. Left-click activates the item, right-click opens its context menu.
 
-**Internals:** Uses Quickshell's `SystemTray.items` model. The tricky part is icon resolution — Qt's `image://icon/` provider is unreliable for tray icons, so `TrayModule` implements a manual fallback chain:
+**Internals:** Uses Quickshell's `SystemTray.items` model. The tricky part is icon resolution - Qt's `image://icon/` provider is unreliable for tray icons, so `TrayModule` implements a manual fallback chain:
 
 1. Absolute path (`/...`) → `file://` URL
 2. `file://` URL → used directly
@@ -148,13 +148,13 @@ The `_fb` (fallback index) counter increments on each `Image.Error` status until
 
 **Internals:** Uses `Quickshell.Hyprland.workspaces` as the Repeater model, filtered by `modelData.monitor === root.monitor`. The animated highlight is a `Rectangle` whose `x` follows `highlightX` with a 200ms `OutCubic` `NumberAnimation`. `highlightX` updates in `onIsFocusedChanged` via `Qt.callLater` to ensure the delegate's layout is settled before reading its position.
 
-The workspaces pill doubles as the notification center — hovering opens a popup with the 5 most recent notifications (see [Notifications](notifications.html)).
+The workspaces pill doubles as the notification center - hovering opens a popup with the 5 most recent notifications (see [Notifications](notifications.html)).
 
 ---
 
 ## App Launcher (`list_apps.py`)
 
-**User:** Used internally by the Settings overlay's **Apps** page. Not a bar module — runs in the background when the apps page opens.
+**User:** Used internally by the Settings overlay's **Apps** page. Not a bar module - runs in the background when the apps page opens.
 
 **Internals:** Scans `/usr/share/applications/*.desktop` and `~/.local/share/applications/*.desktop`. For each file, parses only the `[Desktop Entry]` section, reading `Name`, `Exec`, `Icon`, `Terminal`, `NoDisplay`, and `Type`. Filters out entries with `NoDisplay=true` or `Type != Application`. Outputs one tab-separated line per app:
 
@@ -166,4 +166,4 @@ Results are sorted case-insensitively. The settings overlay reads this output, r
 
 ---
 
-[← Bar](bar.html) • [Lock Screen →](lock-screen.html)
+[← Bar](bar.html) • [Notifications →](notifications.html)

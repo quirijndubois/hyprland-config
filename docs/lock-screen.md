@@ -92,10 +92,10 @@ Random design is resolved at lock time, not stored.
 
 All designs share the same enter/exit animation on the `contentWrapper`:
 
-- **Enter** — slides up from y+50 while fading in over 420ms (`OutExpo`)
-- **Exit** — slides up to y-60 while fading out over 260ms (`InCubic`), then sets `wlLock.locked = false`
+- **Enter** - slides up from y+50 while fading in over 420ms (`OutExpo`)
+- **Exit** - slides up to y-60 while fading out over 260ms (`InCubic`), then sets `wlLock.locked = false`
 
-The **shake** on wrong password is a `SequentialAnimation` of 6 `NumberAnimation` steps moving `pwBoxShiftX` with decreasing amplitude — a damped spring approximation:
+The **shake** on wrong password is a `SequentialAnimation` of 6 `NumberAnimation` steps moving `pwBoxShiftX` with decreasing amplitude - a damped spring approximation:
 
 ```
 +13 → -11 → +9 → -6 → +3 → 0
@@ -112,4 +112,4 @@ Each password dot is a `Rectangle` with a `NumberAnimation on slide` from -14 to
 
 ---
 
-[← Bar Modules](bar-modules.html) • [Settings Overlay →](settings-overlay.html)
+[← Notifications](notifications.html) • [Settings Overlay →](settings-overlay.html)

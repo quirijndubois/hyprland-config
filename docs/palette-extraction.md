@@ -87,7 +87,7 @@ For each accent role (blue, red, etc.), the best candidate from the image is sel
 score = hue_dist(candidate_hue, target_hue) - saturation * 0.4
 ```
 
-Saturation is rewarded (subtracted from score) to prefer vivid colors. The top 3 candidates are picked randomly with inverse-score weighting — so the best match isn't always chosen, adding further variety.
+Saturation is rewarded (subtracted from score) to prefer vivid colors. The top 3 candidates are picked randomly with inverse-score weighting - so the best match isn't always chosen, adding further variety.
 
 ### Random Wallpaper Script
 
@@ -107,4 +107,4 @@ Saturation is rewarded (subtracted from score) to prefer vivid colors. The top 3
 
 ---
 
-[← Theme Engine](theme-engine.html) • [Settings Overlay →](settings-overlay.html)
+[← Theme Engine](theme-engine.html) • [Palettes →](themes.html)

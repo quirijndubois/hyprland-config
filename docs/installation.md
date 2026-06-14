@@ -62,7 +62,7 @@ conda run -n pywalfox pywalfox install
 
 Then install the [Firefox extension](https://addons.mozilla.org/firefox/addon/pywalfox/) and restart Firefox. Palette changes in the settings overlay will update Firefox automatically from that point on.
 
-The `Pillow` package is also used by `extract-palette.py` for wallpaper color extraction — both use the same conda environment.
+The `Pillow` package is also used by `extract-palette.py` for wallpaper color extraction - both use the same conda environment.
 
 ---
 
@@ -74,10 +74,10 @@ Drop images into `~/wallpapers/`. They appear immediately in the settings wallpa
 
 ## Next Steps
 
-- [Hyprland Config](hyprland.html) — adjust monitors, programs, and keybinds
-- [Hypridle](hypridle.html) — configure idle timeouts
-- [Kitty](kitty.html) — understand how terminal theming works
-- [Keybinds](keybinds.html) — full keybinding reference
+- [Hyprland Config](hyprland.html) - adjust monitors, programs, and keybinds
+- [Hypridle](hypridle.html) - configure idle timeouts
+- [Kitty](kitty.html) - understand how terminal theming works
+- [Keybinds](keybinds.html) - full keybinding reference
 
 ---
 

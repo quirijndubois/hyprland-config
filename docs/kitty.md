@@ -5,7 +5,7 @@ title: Kitty
 
 # Kitty
 
-Kitty is the terminal emulator used by Qaskade. Its config is minimal — most visual properties are managed dynamically by the theme engine.
+Kitty is the terminal emulator used by Qaskade. Its config is minimal - most visual properties are managed dynamically by the theme engine.
 
 ---
 
@@ -27,7 +27,7 @@ background_opacity 0.6
 
 ### Color Scheme
 
-Colors update automatically every time you switch palette in the settings overlay. You don't need to restart Kitty — all open instances update live.
+Colors update automatically every time you switch palette in the settings overlay. You don't need to restart Kitty - all open instances update live.
 
 ---
 
@@ -63,7 +63,7 @@ This is called by `Theme.qml` every time the palette changes, updating every ope
 
 ### color_scheme.conf
 
-`include color_scheme.conf` loads a generated color file written by the theme engine. This file is never committed — it lives only in `~/.config/kitty/` and is rewritten on every palette change.
+`include color_scheme.conf` loads a generated color file written by the theme engine. This file is never committed - it lives only in `~/.config/kitty/` and is rewritten on every palette change.
 
 ### dynamic_background_opacity
 
@@ -71,4 +71,4 @@ This is called by `Theme.qml` every time the palette changes, updating every ope
 
 ---
 
-[← Hypridle](hypridle.html) • [Install Script →](install-script.html)
+[← Hypridle](hypridle.html) • [Bar →](bar.html)

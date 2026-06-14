@@ -31,8 +31,8 @@ After the initial sync, watches all three source directories for file changes us
 
 Two paths are excluded from syncing:
 
-- `main-items` — your personal settings menu order
-- `user-settings.lua` — your machine-specific Hyprland overrides
+- `main-items` - your personal settings menu order
+- `user-settings.lua` - your machine-specific Hyprland overrides
 
 These live in `~/.config/quickshell/` and `~/.config/hypr/` and are never overwritten by the install script.
 
@@ -81,4 +81,4 @@ Every event triggers a full `sync_all`, which runs `rsync` on all three director
 
 ---
 
-[← Kitty](kitty.html) • [IPC & Shell Root →](ipc.html)
+[← Installation](installation.html) • [Requirements →](requirements.html)

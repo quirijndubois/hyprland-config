@@ -73,11 +73,11 @@ hl.window_rule({
 
 ### Input
 
-- **Mouse sensitivity** — `0.4` (adjustable live from Settings)
-- **Natural scroll** — enabled on touchpad (adjustable live from Settings)
-- **Scroll factor** — `0.4` (adjustable live from Settings)
-- **3-finger swipe** — horizontal swipe switches workspaces
-- **Mouse drag** — `Alt + LMB` to drag windows, `Alt + RMB` or `Alt + Ctrl + LMB` to resize
+- **Mouse sensitivity** - `0.4` (adjustable live from Settings)
+- **Natural scroll** - enabled on touchpad (adjustable live from Settings)
+- **Scroll factor** - `0.4` (adjustable live from Settings)
+- **3-finger swipe** - horizontal swipe switches workspaces
+- **Mouse drag** - `Alt + LMB` to drag windows, `Alt + RMB` or `Alt + Ctrl + LMB` to resize
 
 ### Cursor Zoom
 
@@ -105,17 +105,17 @@ Volume, brightness, mic, and media playback keys all work out of the box. Media 
 
 Hyprland's Lua config replaces the traditional `.conf` format. The `hl` global exposes:
 
-- `hl.monitor(...)` — configure outputs
-- `hl.workspace_rule(...)` — assign workspaces to monitors
-- `hl.config({ ... })` — set nested config values
-- `hl.curve(name, { ... })` — define bezier curves
-- `hl.animation({ ... })` — configure animation properties
-- `hl.bind(key, action, opts)` — register keybindings
-- `hl.gesture({ ... })` — register touchpad gestures
-- `hl.env(key, value)` — set environment variables
-- `hl.on(event, fn)` — event callbacks (e.g. `hyprland.start`)
-- `hl.window_rule({ ... })` — add window rules
-- `hl.get_config(path)` — read a config value at runtime
+- `hl.monitor(...)` - configure outputs
+- `hl.workspace_rule(...)` - assign workspaces to monitors
+- `hl.config({ ... })` - set nested config values
+- `hl.curve(name, { ... })` - define bezier curves
+- `hl.animation({ ... })` - configure animation properties
+- `hl.bind(key, action, opts)` - register keybindings
+- `hl.gesture({ ... })` - register touchpad gestures
+- `hl.env(key, value)` - set environment variables
+- `hl.on(event, fn)` - event callbacks (e.g. `hyprland.start`)
+- `hl.window_rule({ ... })` - add window rules
+- `hl.get_config(path)` - read a config value at runtime
 
 ### Animation Curves
 
@@ -153,4 +153,4 @@ This file is excluded from `install.sh` syncing and git tracking, making it the 
 
 ---
 
-[← Installation](installation.html) • [Hypridle →](hypridle.html)
+[← Keybinds](keybinds.html) • [Hypridle →](hypridle.html)

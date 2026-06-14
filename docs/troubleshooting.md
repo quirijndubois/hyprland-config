@@ -223,4 +223,4 @@ If you encounter an issue not listed here:
 
 ---
 
-[← Requirements](requirements.html) • [Home →](index.html) • [Keybinds](keybinds.html)
+[← Palettes](themes.html) • [Home →](index.html)

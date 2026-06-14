@@ -15,9 +15,9 @@ Qaskade registers as the system notification daemon and displays notifications i
 
 When a notification arrives, the workspace pill in the center of the bar animates wider and shows the app name and summary for 5 seconds. Colors reflect urgency:
 
-- **Normal** — blue
-- **Low** — muted/dim
-- **Critical** — red
+- **Normal** - blue
+- **Low** - muted/dim
+- **Critical** - red
 
 ### Notification Popup
 
@@ -75,9 +75,9 @@ History is capped at 50 entries. Entries are plain JS objects (not QML notificat
 `shell.qml`'s bar strip listens to `Notifications.newNotification` via a `Connections` block and stores the current notification in local properties (`notifApp`, `notifSummary`, `notifUrgency`, `notifActive`). A `Timer` of 5000ms resets `notifActive`.
 
 The center of the bar has three overlapping `Row` items:
-1. `centerRow` — workspace pill (normal state)
-2. `notifCenterRow` — notification display
-3. `clipboardCenterRow` — clipboard copy confirmation
+1. `centerRow` - workspace pill (normal state)
+2. `notifCenterRow` - notification display
+3. `clipboardCenterRow` - clipboard copy confirmation
 
 Each fades in/out using `opacity` with a 150ms `InOutQuad` transition. The pill's `width` also animates to fit the new content (`OutCubic`, 220ms).
 
@@ -97,4 +97,4 @@ ScriptAction { script: Notifications.dismiss(id) }
 
 ---
 
-[← Bar](bar.html) • [Settings Overlay →](settings-overlay.html)
+[← Bar Modules](bar-modules.html) • [Lock Screen →](lock-screen.html)

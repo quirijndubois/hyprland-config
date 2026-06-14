@@ -26,4 +26,4 @@ title: Requirements
 
 ---
 
-[← Customization](customization.html) • [Troubleshooting →](troubleshooting.html)
+[← Install Script](install-script.html) • [Keybinds →](keybinds.html)
