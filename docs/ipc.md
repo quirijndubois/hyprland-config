@@ -16,7 +16,7 @@ Keybinds in `hyprland.lua` use Quickshell's IPC to trigger shell actions:
 | Keybind | IPC call |
 |---|---|
 | `Alt + S` | `qs ipc call settings toggle` |
-| `Alt + Space` | `qs ipc call settings-apps open` |
+| `Alt + Space` | `quickshell ipc -c default call settings openApps` |
 | `Alt + D` | `qs ipc call statusbar toggle` |
 | `Alt + Delete` | `qs ipc call lock lock` |
 | `Alt + R` | runs `random-wallpaper.sh` which calls `qs ipc call theme setCustom` |
@@ -33,9 +33,10 @@ Each feature exposes a named `IpcHandler` target:
 
 ```qml
 IpcHandler { target: "settings"
-    function toggle() { root.settingsOpen = !root.settingsOpen }
-    function open()   { root.settingsOpen = true }
-    function close()  { root.settingsOpen = false }
+    function toggle()    { root.settingsOpen = !root.settingsOpen }
+    function open()      { root.settingsOpen = true }
+    function openApps()  { root.requestedPage = "apps"; root.settingsOpen = true }
+    function close()     { root.settingsOpen = false }
 }
 
 IpcHandler { target: "lock"
@@ -54,10 +55,6 @@ IpcHandler { target: "theme"
 
 IpcHandler { target: "clipboard"
     function copied() { root.clipboardCopied() }
-}
-
-IpcHandler { target: "settings-apps"
-    function open() { root.requestedPage = "apps"; root.settingsOpen = true }
 }
 ```
 

@@ -18,23 +18,16 @@ ShellRoot {
     IpcHandler {
         target: "settings"
 
-        function toggle() { root.settingsOpen = !root.settingsOpen }
-        function open()   { root.settingsOpen = true }
-        function close()  { root.settingsOpen = false }
+        function toggle()    { root.settingsOpen = !root.settingsOpen }
+        function open()      { root.settingsOpen = true }
+        function openApps()  { root.requestedPage = "apps"; root.settingsOpen = true }
+        function close()     { root.settingsOpen = false }
     }
 
     IpcHandler {
         target: "clipboard"
 
-        function copied() {
-            root.clipboardCopied()
-        }
-    }
-
-    IpcHandler {
-        target: "settings-apps"
-
-        function open() { root.requestedPage = "apps"; root.settingsOpen = true }
+        function copied() { root.clipboardCopied() }
     }
 
     IpcHandler {
@@ -258,7 +251,7 @@ ShellRoot {
                             color: barStrip.notifUrgency === NotificationUrgency.Critical ? Theme.red
                                  : barStrip.notifUrgency === NotificationUrgency.Low      ? Theme.subtext
                                  : Theme.blue
-                            font.family: "JetBrains Mono"
+                            font.family: Theme.barFontFamily
                             font.pixelSize: 11
                             verticalAlignment: Text.AlignVCenter
                             width: Math.min(implicitWidth, 100)
@@ -269,7 +262,7 @@ ShellRoot {
                             visible: barStrip.notifSummary !== ""
                             text: "·"
                             color: Theme.subtext
-                            font.family: "JetBrains Mono"
+                            font.family: Theme.barFontFamily
                             font.pixelSize: 11
                             verticalAlignment: Text.AlignVCenter
                         }
@@ -277,7 +270,7 @@ ShellRoot {
                         Text {
                             text: barStrip.notifSummary
                             color: Theme.text
-                            font.family: "JetBrains Mono"
+                            font.family: Theme.barFontFamily
                             font.pixelSize: 12
                             font.bold: true
                             verticalAlignment: Text.AlignVCenter
@@ -300,7 +293,7 @@ ShellRoot {
                         Text {
                             text: "✓"
                             color: Theme.green
-                            font.family: "JetBrains Mono"
+                            font.family: Theme.barFontFamily
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
                             font.bold: true
@@ -309,7 +302,7 @@ ShellRoot {
                         Text {
                             text: "copied"
                             color: Theme.text
-                            font.family: "JetBrains Mono"
+                            font.family: Theme.barFontFamily
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
                             font.bold: true

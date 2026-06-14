@@ -213,10 +213,10 @@ hl.bind(
 
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd("quickshell ipc call settings-apps open"))
+hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd("quickshell ipc -c default call settings openApps"))
 -- hl.bind(mainMod .. " + I",        hl.dsp.layout("togglesplit"))
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(browser))
-hl.bind(mainMod .. " + Delete", hl.dsp.exec_cmd("qs ipc call lock lock"))
+hl.bind(mainMod .. " + Delete", hl.dsp.exec_cmd("quickshell ipc -c default call lock lock"))
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen())
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("hyprpicker -a"))
 hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("hyprshot -m region"))
