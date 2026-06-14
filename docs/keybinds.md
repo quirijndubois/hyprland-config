@@ -55,4 +55,4 @@ title: Keybinds
 
 ---
 
-[← Installation](installation.html) • [Requirements →](requirements.html)
+[← Configuration](configuration.html) • [Customization →](customization.html)

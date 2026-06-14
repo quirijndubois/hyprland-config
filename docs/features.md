@@ -53,4 +53,4 @@ title: Features
 
 ---
 
-[← Back to home](index.html) • [Installation →](installation.html)
+[← Home](index.html) • [Installation →](installation.html)

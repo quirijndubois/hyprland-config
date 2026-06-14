@@ -29,5 +29,10 @@ Qaskade is a complete desktop shell for Hyprland featuring:
 ## Explore
 
 - [**Features**](features.html) - Detailed feature breakdown
+- [**Installation**](installation.html) - Complete setup guide
 - [**Keybinds**](keybinds.html) - Full keybinding reference
-- [**Requirements**](requirements.html) - Dependencies and setup
+- [**Configuration**](configuration.html) - Config files and settings
+- [**Customization**](customization.html) - Themes, designs, and modules
+- [**Themes**](themes.html) - Color palettes and theming
+- [**Troubleshooting**](troubleshooting.html) - Common issues and fixes
+- [**Requirements**](requirements.html) - Dependencies list

@@ -80,4 +80,4 @@ Drop images into `~/wallpapers/` - they appear immediately in the settings wallp
 
 ---
 
-[← Features](features.html) • [Keybinds →](keybinds.html)
+[← Features](features.html) • [Configuration →](configuration.html)

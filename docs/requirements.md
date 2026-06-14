@@ -26,4 +26,4 @@ title: Requirements
 
 ---
 
-[← Keybinds](keybinds.html) • [Home →](index.html)
+[← Customization](customization.html) • [Troubleshooting →](troubleshooting.html)

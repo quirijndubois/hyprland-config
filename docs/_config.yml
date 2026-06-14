@@ -1,8 +1,9 @@
 title: Qaskade
 description: A keyboard-driven Hyprland desktop shell powered by Quickshell
-url: https://quirijndubois.github.io/qaskade
+url: https://quirijndubois.github.io/Qaskade
+baseurl: /Qaskade
 github_username: quirijndubois
-github_repo: qaskade
+github_repo: Qaskade
 
 theme: minima
 plugins:
