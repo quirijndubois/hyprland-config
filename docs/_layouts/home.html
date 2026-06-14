@@ -7,30 +7,55 @@
     <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <a href="{{ '/' | relative_url }}">{{ site.title }}</a>
+    <div class="layout-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="{{ '/' | relative_url }}" class="sidebar-logo">{{ site.title }}</a>
             </div>
-            <ul class="nav-links">
-                <li><a href="{{ '/features.html' | relative_url }}">Features</a></li>
-                <li><a href="{{ '/installation.html' | relative_url }}">Install</a></li>
-                <li><a href="{{ '/customization.html' | relative_url }}">Customize</a></li>
-                <li><a href="{{ '/troubleshooting.html' | relative_url }}">Help</a></li>
-                <li><a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}" class="btn-github">GitHub</a></li>
-            </ul>
-        </div>
-    </nav>
 
-    <main class="main-content">
-        {{ content }}
-    </main>
+            <nav class="sidebar-nav">
+                <a href="{{ '/' | relative_url }}" class="nav-item">Home</a>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">Getting Started</div>
+                    <a href="{{ '/features.html' | relative_url }}" class="nav-item">Features</a>
+                    <a href="{{ '/installation.html' | relative_url }}" class="nav-item">Installation</a>
+                    <a href="{{ '/requirements.html' | relative_url }}" class="nav-item">Requirements</a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">Usage</div>
+                    <a href="{{ '/keybinds.html' | relative_url }}" class="nav-item">Keybinds</a>
+                    <a href="{{ '/configuration.html' | relative_url }}" class="nav-item">Configuration</a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">Customization</div>
+                    <a href="{{ '/customization.html' | relative_url }}" class="nav-item">Overview</a>
+                    <a href="{{ '/themes.html' | relative_url }}" class="nav-item">Themes & Colors</a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title">Support</div>
+                    <a href="{{ '/troubleshooting.html' | relative_url }}" class="nav-item">Troubleshooting</a>
+                    <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}" class="nav-item nav-github" target="_blank">GitHub</a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <p class="sidebar-license">{{ site.license }}</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            {{ content }}
+        </main>
+    </div>
 
     <footer class="footer">
         <div class="footer-content">
             <p>&copy; 2024 {{ site.title }}. Licensed under {{ site.license }}.</p>
             <p>
-                <a href="https://github.com/{{ site.github_username }}/{{ site.github_repo }}">GitHub</a> •
                 <a href="https://hyprland.org">Hyprland</a> •
                 <a href="https://quickshell.outfoxxed.me">Quickshell</a>
             </p>
