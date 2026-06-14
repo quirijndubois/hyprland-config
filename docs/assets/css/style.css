@@ -27,6 +27,9 @@ body {
     color: var(--text-primary);
     line-height: 1.6;
     letter-spacing: 0.3px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 /* Navigation */
@@ -41,16 +44,17 @@ body {
 }
 
 .nav-container {
-    max-width: 1200px;
+    max-width: 900px;
     margin: 0 auto;
     padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 100%;
 }
 
 .logo a {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-weight: 700;
     color: var(--accent);
     text-decoration: none;
@@ -86,16 +90,20 @@ body {
     padding: 0.5rem 1rem;
     border-radius: 6px;
     font-weight: 600;
+    transition: background-color 0.3s ease;
 }
 
 .btn-github:hover {
     background-color: var(--accent-alt) !important;
+    color: var(--bg-primary) !important;
 }
 
 /* Main Content */
 .main-content {
+    flex: 1;
     max-width: 900px;
     margin: 0 auto;
+    width: 100%;
     padding: 3rem 2rem;
 }
 
@@ -108,22 +116,24 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h1 {
-    font-size: 3rem;
+    font-size: 2.5rem;
     color: var(--accent);
     margin-top: 0;
     margin-bottom: 0.5rem;
 }
 
 h2 {
-    font-size: 2rem;
+    font-size: 1.8rem;
     color: var(--accent);
     border-bottom: 2px solid var(--accent);
     padding-bottom: 0.5rem;
+    margin-top: 2.5rem;
 }
 
 h3 {
     font-size: 1.3rem;
     color: var(--text-primary);
+    margin-top: 1.5rem;
 }
 
 h4 {
@@ -145,7 +155,7 @@ strong {
 a {
     color: var(--link);
     text-decoration: none;
-    transition: color 0.3s ease;
+    transition: color 0.3s ease, border-bottom-color 0.3s ease;
     border-bottom: 1px dotted transparent;
 }
 
@@ -253,7 +263,7 @@ hr {
 .footer {
     background-color: var(--bg-secondary);
     border-top: 1px solid var(--border);
-    margin-top: 4rem;
+    margin-top: auto;
 }
 
 .footer-content {
@@ -280,15 +290,16 @@ hr {
 /* Responsive */
 @media (max-width: 768px) {
     h1 {
-        font-size: 2rem;
+        font-size: 1.8rem;
     }
 
     h2 {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
     }
 
     .nav-links {
         gap: 1rem;
+        font-size: 0.9rem;
     }
 
     .main-content {
@@ -297,6 +308,10 @@ hr {
 
     .nav-container {
         padding: 1rem;
+    }
+
+    .logo a {
+        font-size: 1.1rem;
     }
 }
 
