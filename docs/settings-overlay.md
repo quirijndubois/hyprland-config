@@ -23,6 +23,17 @@ The settings overlay is Qaskade's central control panel - a floating window with
 - **Escape** to close or go back
 - **Shift + Up / Down** to reorder main menu items (order is saved)
 
+#### Vim Binds
+
+Enable **vim binds** under Settings → System → navigation to switch to a modal navigation style:
+
+- `h` / `l` - go back / activate item (same as Left / Right)
+- `j` / `k` - move selection down / up
+- `i` - enter search mode (type to fuzzy-search)
+- `Escape` - exit search mode (or close/go back if not in search mode)
+
+The setting is persisted to `~/.config/quickshell/vim-binds`.
+
 ### Pages
 
 | Page | Access | Contents |
@@ -34,7 +45,7 @@ The settings overlay is Qaskade's central control panel - a floating window with
 | Design | Appearance → design | 8 bar designs |
 | Lock Screen | Appearance → lock screen | 5 lock designs |
 | Monitor Layout | Main → monitor layout | Enable/disable monitors, resolution, scale, position, workspace assignment |
-| System | Main → system | Mouse sensitivity, natural scroll, scroll factor, blur, window layout |
+| System | Main → system | **monitors** - per-monitor scale, enable/disable, layout; **input** - mouse sensitivity, natural scroll, scroll factor; **window** - layout, blur; **navigation** - vim binds |
 | Bluetooth | Main → bluetooth | Pair, connect, disconnect devices |
 | Clipboard | Main → clipboard | Browse and re-copy clipboard history entries |
 | Apps | Main → apps | Browse and launch `.desktop` applications |

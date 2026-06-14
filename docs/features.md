@@ -18,11 +18,11 @@ title: Features
 - **Fuzzy search** across wallpapers, palettes, designs, layouts, bar modules, apps, Bluetooth devices, clipboard history, monitors, and system settings
 - **Appearance page** - select palettes, bar designs, lock screen designs, and toggle individual bar modules; press `A` to extract a palette directly from any wallpaper
 - **Monitor layout page** - enable/disable monitors, set resolution/scale/position, assign workspaces to specific monitors
-- **System settings page** - adjust monitor scales, mouse sensitivity, natural scroll, scroll factor, window layout
+- **System settings page** - sections for monitors (scale, enable/disable), input (mouse sensitivity, natural scroll, scroll factor), window (layout, blur), and navigation (vim binds toggle)
 - **Notification history** - view recent notifications, manually dismiss, or clear all
 - **Filesystem browser** - navigate directories and open files with `xdg-open`
 - **Math evaluator** - type expressions like `5 * (3 + 2)`, `2^16`, `(100 - 32) / 1.8` and get instant results
-- **Keyboard-driven** - full navigation with arrows, Enter, Escape; reorder menu with `Shift+Up`/`Shift+Down` (persisted)
+- **Keyboard-driven** - full navigation with arrows, Enter, Escape; reorder menu with `Shift+Up`/`Shift+Down` (persisted); optional vim binds mode (`hjkl` + `i` for search)
 
 ## Theming & Layout
 
