@@ -91,6 +91,7 @@ FloatingWindow {
     property bool blurEnabled: true
     property int selectedMonitorIdx: 0
     property var workspaceRules: []
+    property bool vimSearchMode: false
 
     readonly property var monitorColors: [Theme.blue, Theme.green, Theme.yellow, Theme.teal, Theme.purple, Theme.red]
 
@@ -98,7 +99,7 @@ FloatingWindow {
 
     property var systemSettingItems: {
         const items = []
-        items.push({ type: "section", label: "display" })
+        items.push({ type: "section", label: "monitors" })
         for (const m of root.systemMonitors) {
             items.push({ type: "scale", label: m.name, sub: m.width + "×" + m.height, monitor: m })
             items.push({ type: "monitor_toggle", label: m.enabled ? "disable" : "enable", monitor: m })
@@ -112,6 +113,8 @@ FloatingWindow {
         items.push({ type: "section", label: "window" })
         items.push({ type: "nav", label: "layout", icon: "", page: "layout" })
         items.push({ type: "blur_toggle", label: "blur" })
+        items.push({ type: "section", label: "navigation" })
+        items.push({ type: "vim_binds", label: "vim binds" })
         return items
     }
 
@@ -328,6 +331,7 @@ FloatingWindow {
             navStack = []
             selectedIndex = 0
             searchQuery = ""
+            vimSearchMode = false
             Qt.callLater(() => keyNav.forceActiveFocus())
             focusGrabReady = false
             focusGrabTimer.restart()
@@ -954,17 +958,24 @@ FloatingWindow {
             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
         }
 
-        property real searchOpacity: root.searchQuery !== "" ? 1.0 : 0.0
+        property real searchOpacity: (root.searchQuery !== "" || (Theme.vimBinds && root.vimSearchMode)) ? 1.0 : 0.0
         Behavior on searchOpacity {
             NumberAnimation { duration: 140; easing.type: Easing.InOutQuad }
         }
 
         Keys.onPressed: event => {
-            const inSearch = root.searchQuery !== ""
+            const inSearch = Theme.vimBinds ? root.vimSearchMode : root.searchQuery !== ""
+
+            if (Theme.vimBinds && !inSearch && event.key === Qt.Key_I) {
+                root.vimSearchMode = true
+                event.accepted = true
+                return
+            }
 
             if (event.key === Qt.Key_Escape) {
                 if (inSearch) {
                     root.searchQuery = ""
+                    if (Theme.vimBinds) root.vimSearchMode = false
                 } else if (root.page === "main") {
                     root.closeRequested()
                 } else {
@@ -980,7 +991,7 @@ FloatingWindow {
                 return
             }
 
-            if (event.key === Qt.Key_Up) {
+            if (event.key === Qt.Key_Up || (Theme.vimBinds && !inSearch && event.key === Qt.Key_K)) {
                 if (root.page === "monitor_layout") {
                     const mon = root.systemMonitors[root.selectedMonitorIdx]
                     if (mon) root.setMonitorPosition(mon, 0, -50)
@@ -991,7 +1002,7 @@ FloatingWindow {
                 if (inSearch) {
                     if (root.selectedSearchIndex > 0) {
                         root.selectedSearchIndex--
-                        searchList.positionViewAtIndex(root.selectedSearchIndex, ListView.Contain)
+                        searchList.positionViewAtIndex(Math.max(root.selectedSearchIndex - 1, 0), ListView.Contain)
                     }
                 } else if (shiftHeld && root.page === "main" && root.selectedIndex > 0) {
                     const items = Array.from(root.mainItems)
@@ -1000,7 +1011,7 @@ FloatingWindow {
                     root.mainItems = items
                     root.selectedIndex = i - 1
                     root.saveMainItems()
-                    mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    mainList.positionViewAtIndex(Math.max(root.selectedIndex - 1, 0), ListView.Contain)
                 } else if (root.selectedIndex > 0) {
                     const sectionItems = root.page === "palette" ? root.paletteOptions
                                        : root.page === "system"  ? root.systemSettingItems
@@ -1010,38 +1021,39 @@ FloatingWindow {
                         target--
                     if (!sectionItems || sectionItems[target]?.type !== "section")
                         root.selectedIndex = target
+                    const upScroll = Math.max(root.selectedIndex - 1, 0)
                     if (root.page === "main")
-                        mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        mainList.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "appearance")
-                        appearanceList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        appearanceList.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "wallpaper")
-                        wpList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        wpList.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "palette")
-                        paletteList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        paletteList.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "apps")
-                        appListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        appListView.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "bluetooth")
-                        btListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        btListView.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "design")
-                        designList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        designList.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "layout")
-                        layoutList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        layoutList.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "bar")
-                        barListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        barListView.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "clipboard")
-                        clipListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        clipListView.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "notifications")
-                        notifListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        notifListView.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "system")
-                        sysListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        sysListView.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "lockscreen")
-                        lockscreenList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        lockscreenList.positionViewAtIndex(upScroll, ListView.Contain)
                 }
                 event.accepted = true
                 return
             }
 
-            if (event.key === Qt.Key_Down) {
+            if (event.key === Qt.Key_Down || (Theme.vimBinds && !inSearch && event.key === Qt.Key_J)) {
                 if (root.page === "monitor_layout") {
                     const mon = root.systemMonitors[root.selectedMonitorIdx]
                     if (mon) root.setMonitorPosition(mon, 0, 50)
@@ -1066,7 +1078,7 @@ FloatingWindow {
                 if (inSearch) {
                     if (root.selectedSearchIndex < root.searchResults.length - 1) {
                         root.selectedSearchIndex++
-                        searchList.positionViewAtIndex(root.selectedSearchIndex, ListView.Contain)
+                        searchList.positionViewAtIndex(root.selectedSearchIndex + 1, ListView.Contain)
                     }
                 } else if (shiftHeld && root.page === "main" && root.selectedIndex < maxIdx) {
                     const items = Array.from(root.mainItems)
@@ -1075,7 +1087,7 @@ FloatingWindow {
                     root.mainItems = items
                     root.selectedIndex = i + 1
                     root.saveMainItems()
-                    mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                    mainList.positionViewAtIndex(root.selectedIndex + 1, ListView.Contain)
                 } else if (root.selectedIndex < maxIdx) {
                     root.selectedIndex++
                     while ((root.page === "system" && root.systemSettingItems[root.selectedIndex]?.type === "section") ||
@@ -1083,32 +1095,33 @@ FloatingWindow {
                         if (root.selectedIndex < maxIdx) root.selectedIndex++
                         else break
                     }
+                    const downScroll = root.selectedIndex + 1
                     if (root.page === "main")
-                        mainList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        mainList.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "appearance")
-                        appearanceList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        appearanceList.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "wallpaper")
-                        wpList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        wpList.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "palette")
-                        paletteList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        paletteList.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "apps")
-                        appListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        appListView.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "bluetooth")
-                        btListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        btListView.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "design")
-                        designList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        designList.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "layout")
-                        layoutList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        layoutList.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "bar")
-                        barListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        barListView.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "clipboard")
-                        clipListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        clipListView.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "notifications")
-                        notifListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        notifListView.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "system")
-                        sysListView.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        sysListView.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "lockscreen")
-                        lockscreenList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+                        lockscreenList.positionViewAtIndex(downScroll, ListView.Contain)
                 }
                 event.accepted = true
                 return
@@ -1159,6 +1172,35 @@ FloatingWindow {
                 }
             }
 
+            if (Theme.vimBinds && !inSearch) {
+                if (event.key === Qt.Key_H) {
+                    if (root.page === "monitor_layout") {
+                        const mon = root.systemMonitors[root.selectedMonitorIdx]
+                        if (mon) root.setMonitorPosition(mon, -50, 0)
+                        event.accepted = true
+                        return
+                    }
+                    if (root.page !== "main") {
+                        goBack()
+                        event.accepted = true
+                        return
+                    }
+                }
+                if (event.key === Qt.Key_L) {
+                    if (root.page === "monitor_layout") {
+                        const mon = root.systemMonitors[root.selectedMonitorIdx]
+                        if (mon) root.setMonitorPosition(mon, 50, 0)
+                        event.accepted = true
+                        return
+                    }
+                    if (root.page === "main" || root.page === "appearance") {
+                        activateItem()
+                        event.accepted = true
+                        return
+                    }
+                }
+            }
+
             if (event.key === Qt.Key_Tab) {
                 if (root.page === "monitor_layout" && !inSearch) {
                     root.selectedMonitorIdx = (root.selectedMonitorIdx + 1) % root.systemMonitors.length
@@ -1192,8 +1234,10 @@ FloatingWindow {
             }
 
             if (event.text && event.text.length === 1 && event.text.charCodeAt(0) >= 32) {
-                root.searchQuery += event.text
-                event.accepted = true
+                if (!Theme.vimBinds || inSearch) {
+                    root.searchQuery += event.text
+                    event.accepted = true
+                }
             }
         }
 
@@ -1284,6 +1328,8 @@ FloatingWindow {
                     root.setScrollFactor(root.scrollFactor + 0.05)
                 } else if (item.type === "font_size") {
                     Theme.barFontSize = Math.min(20, Theme.barFontSize + 1)
+                } else if (item.type === "vim_binds") {
+                    Theme.vimBinds = !Theme.vimBinds
                 } else if (item.type === "nav") {
                     navigateTo(item.page)
                 }
@@ -2063,6 +2109,7 @@ FloatingWindow {
                     model: root.systemSettingItems
                     clip: true
                     interactive: true
+                    onCountChanged: if (root.activeSubPage === "system") Qt.callLater(() => contentY = 0)
 
                     delegate: Item {
                         id: sysDelegate
@@ -2238,13 +2285,19 @@ FloatingWindow {
                             }
 
                             // Toggle for natural_scroll
-                            Text {
+                            Rectangle {
                                 anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
                                 visible: sysDelegate.modelData.type === "natural_scroll"
-                                text: root.naturalScroll ? "[*]" : "[ ]"
-                                color: root.naturalScroll ? Theme.green : Theme.subtext
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: sf
+                                width: 34; height: 18; radius: 9
+                                color: root.naturalScroll ? Theme.green : Theme.border
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                                Rectangle {
+                                    width: 12; height: 12; radius: 6
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: Theme.base
+                                    x: root.naturalScroll ? parent.width - width - 3 : 3
+                                    Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                                }
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
@@ -2253,13 +2306,19 @@ FloatingWindow {
                             }
 
                             // Toggle for blur
-                            Text {
+                            Rectangle {
                                 anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
                                 visible: sysDelegate.modelData.type === "blur_toggle"
-                                text: root.blurEnabled ? "[*]" : "[ ]"
-                                color: root.blurEnabled ? Theme.green : Theme.subtext
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: sf
+                                width: 34; height: 18; radius: 9
+                                color: root.blurEnabled ? Theme.green : Theme.border
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                                Rectangle {
+                                    width: 12; height: 12; radius: 6
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: Theme.base
+                                    x: root.blurEnabled ? parent.width - width - 3 : 3
+                                    Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                                }
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
@@ -2267,19 +2326,49 @@ FloatingWindow {
                                 }
                             }
 
+                            // Toggle for vim binds
+                            Rectangle {
+                                anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                                visible: sysDelegate.modelData.type === "vim_binds"
+                                width: 34; height: 18; radius: 9
+                                color: Theme.vimBinds ? Theme.green : Theme.border
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                                Rectangle {
+                                    width: 12; height: 12; radius: 6
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: Theme.base
+                                    x: Theme.vimBinds ? parent.width - width - 3 : 3
+                                    Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: { root.selectedIndex = sysDelegate.index; Theme.vimBinds = !Theme.vimBinds }
+                                }
+                            }
+
                             // Toggle for monitor enable/disable
-                            Text {
+                            Rectangle {
                                 anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
                                 visible: sysDelegate.modelData.type === "monitor_toggle"
                                 property var entry: sysDelegate.modelData
+                                property bool isOn: entry.monitor && entry.monitor.enabled
                                 property bool canDisable: root.systemMonitors.filter(m => m.enabled).length > 1
-                                text: entry.monitor && entry.monitor.enabled ? "[ ●]" : "[●]"
-                                color: (entry.monitor && entry.monitor.enabled) ? Theme.green : (canDisable ? Theme.subtext : Theme.surface)
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: sf
+                                width: 34; height: 18; radius: 9
+                                opacity: (!isOn && !canDisable) ? 0.35 : 1.0
+                                Behavior on opacity { NumberAnimation { duration: 150 } }
+                                color: isOn ? Theme.green : Theme.border
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                                Rectangle {
+                                    width: 12; height: 12; radius: 6
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: Theme.base
+                                    x: parent.isOn ? parent.width - width - 3 : 3
+                                    Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                                }
                                 MouseArea {
                                     anchors.fill: parent
-                                    cursorShape: parent.canDisable || parent.entry.monitor?.enabled ? Qt.PointingHandCursor : Qt.ForbiddenCursor
+                                    cursorShape: (parent.canDisable || parent.isOn) ? Qt.PointingHandCursor : Qt.ForbiddenCursor
                                     onClicked: { root.selectedIndex = sysDelegate.index; root.setMonitorEnabled(sysDelegate.modelData.monitor, !sysDelegate.modelData.monitor.enabled) }
                                 }
                             }
@@ -3102,13 +3191,24 @@ FloatingWindow {
                             }
                         }
 
-                        Text {
-                            anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                        Rectangle {
+                            anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
                             property bool active: !!Theme[modelData.id]
-                            text:  active ? "[*]" : "[ ]"
-                            color: active ? Theme.green : Theme.subtext
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: sf
+                            width: 34; height: 18; radius: 9
+                            color: active ? Theme.green : Theme.border
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Rectangle {
+                                width: 12; height: 12; radius: 6
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: Theme.base
+                                x: parent.active ? parent.width - width - 3 : 3
+                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: { root.selectedIndex = index; root.toggleBarModule(modelData.id) }
+                            }
                         }
 
                     }
@@ -3295,7 +3395,7 @@ FloatingWindow {
             anchors.fill: parent
             opacity: keyNav.searchOpacity
             visible: keyNav.searchOpacity > 0
-            enabled: root.searchQuery !== ""
+            enabled: root.searchQuery !== "" || (Theme.vimBinds && root.vimSearchMode)
 
             Rectangle { anchors.fill: parent; color: Theme.base }
 
@@ -3334,7 +3434,7 @@ FloatingWindow {
 
                         SequentialAnimation on opacity {
                             loops: Animation.Infinite
-                            running: root.searchQuery !== ""
+                            running: root.searchQuery !== "" || (Theme.vimBinds && root.vimSearchMode)
                             NumberAnimation { to: 0; duration: 500; easing.type: Easing.InOutSine }
                             NumberAnimation { to: 1; duration: 500; easing.type: Easing.InOutSine }
                         }
@@ -3343,7 +3443,8 @@ FloatingWindow {
 
                 Text {
                     anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-                    text: root.searchResults.length === 0 ? "no results"
+                    text: (Theme.vimBinds && root.vimSearchMode && root.searchQuery === "") ? "type to search"
+                        : root.searchResults.length === 0 ? "no results"
                         : root.searchResults.length + " result" + (root.searchResults.length === 1 ? "" : "s")
                     color: Theme.subtext
                     font.family: "JetBrains Mono"

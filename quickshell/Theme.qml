@@ -29,6 +29,7 @@ Singleton {
     property bool showMusic:      true
     property bool showInhibit:    true
     property int  gapsOut:        10
+    property bool vimBinds:     false
 
     property color base:    "#1e1e2e"
     property color surface: "#181825"
@@ -305,6 +306,12 @@ Singleton {
         saveBarFontSizeProc.running = true
     }
 
+    onVimBindsChanged: {
+        saveVimBindsProc.command = ["sh", "-c", "mkdir -p \"$HOME/.config/quickshell\" && printf '%s' '" + (root.vimBinds ? "1" : "0") + "' > $HOME/.config/quickshell/vim-binds"]
+        saveVimBindsProc.running = false
+        saveVimBindsProc.running = true
+    }
+
     function updateSystemColorScheme() {
         const t = root._target
         const bx = t.base
@@ -384,6 +391,7 @@ Singleton {
     Process { id: saveLockDesignProc }
     Process { id: barModulesSaveProc }
     Process { id: saveBarFontSizeProc }
+    Process { id: saveVimBindsProc }
     Process { id: kittyThemeSaveProc }
     Process { id: firefoxThemeSaveProc }
     Process { id: systemColorSchemeProc }
@@ -454,6 +462,18 @@ Singleton {
                     const val = parseInt(saved, 10)
                     if (!isNaN(val)) root.barFontSize = val
                 }
+            }
+        }
+    }
+
+    Process {
+        id: loadVimBindsProc
+        command: ["sh", "-c", "cat $HOME/.config/quickshell/vim-binds 2>/dev/null"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const saved = this.text.trim()
+                if (saved) root.vimBinds = saved === "1"
             }
         }
     }
