@@ -366,6 +366,18 @@ FloatingWindow {
         }
     }
 
+    Timer {
+        id: appsAutoRefreshTimer
+        interval: 5000
+        repeat: true
+        running: true
+        onTriggered: {
+            if (!appsProc.running) {
+                appsProc.running = true
+            }
+        }
+    }
+
     Process {
         id: awwwProc
         stdout: StdioCollector {}

@@ -1,0 +1,19 @@
+title: Qaskade
+description: A keyboard-driven Hyprland desktop shell powered by Quickshell
+url: https://quirijndubois.github.io/qaskade
+github_username: quirijndubois
+github_repo: qaskade
+
+theme: minima
+plugins:
+  - jekyll-feed
+
+# Exclude from processing
+exclude:
+  - .gitignore
+  - README.md
+
+# Custom variables
+author: Quirijn
+email: quirijn@oiso.nl
+license: GPLv3

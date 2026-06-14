@@ -2,6 +2,8 @@
 
 A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell](https://quickshell.outfoxxed.me/) panel. Keyboard-driven, visually cohesive, and packed with tools.
 
+**[📖 View the full documentation](https://quirijndubois.github.io/qaskade/)**
+
 ![demo](demo.gif)
 
 ## Features
@@ -90,8 +92,11 @@ A [Hyprland](https://hyprland.org) desktop shell powered by a custom [Quickshell
 ### 1. Install dependencies
 
 ```bash
-# Arch Linux
-paru -S hyprland quickshell-git kitty awww hyprlock hypridle hyprshot hyprpicker wl-clipboard cliphist kconfig
+# Arch Linux - official repos
+sudo pacman -S hyprland kitty awww hypridle hyprshot hyprpicker wl-clipboard cliphist kconfig
+
+# AUR
+paru -S quickshell-git
 ```
 
 `kconfig` provides `kwriteconfig6`, used to update the qt6ct color scheme when the palette changes.
@@ -149,7 +154,7 @@ Drop images into `wallpapers/` - they appear immediately in the settings wallpap
 - [Quickshell](https://quickshell.outfoxxed.me/) (built from git - `quickshell-git` on AUR)
 - [kitty](https://sw.kovidgoyal.net/kitty/)
 - [awww](https://github.com/danyspin97/awww) (wallpaper transitions)
-- [hyprlock](https://github.com/hyprwm/hyprlock) / [hypridle](https://github.com/hyprwm/hypridle) (lockscreen + idle)
+- [hypridle](https://github.com/hyprwm/hypridle) (idle management)
 - [hyprshot](https://github.com/Gustash/hyprshot) (screenshots)
 - [hyprpicker](https://github.com/hyprwm/hyprpicker) (color picker)
 - [wl-clipboard](https://github.com/bugaevc/wl-clipboard) (clipboard history)
