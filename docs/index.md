@@ -7,32 +7,37 @@ title: Qaskade
 
 A keyboard-driven [Hyprland](https://hyprland.org) desktop shell powered by [Quickshell](https://quickshell.outfoxxed.me/).
 
-Visually cohesive, feature-packed, and blazingly fast.
+![Demo](https://github.com/quirijndubois/Qaskade/raw/main/demo.gif)
 
-![Demo](https://github.com/quirijndubois/qaskade/raw/main/demo.gif)
+## Quick Start
 
-## What is it?
+```bash
+git clone https://github.com/quirijndubois/Qaskade.git
+cd Qaskade
+./install.sh
+```
 
-Qaskade is a complete desktop shell for Hyprland featuring:
+See [Installation](installation.html) for detailed setup.
 
-- **Custom Quickshell panel** with modular bar modules
-- **18 color palettes** with live theme switching
-- **Settings overlay** with fuzzy search and system management
-- **Lock screen** with multiple designs and animations
-- **Wallpaper extraction** to auto-generate color schemes
-- **Fully keyboard-driven** workflow
+## What's in here
 
-## Get Started
+**Getting Started** — install, dependencies, and keybinds.
 
-[**Installation Guide →**](installation.html)
+**Components** — each major feature documented with a user guide and internal implementation details:
 
-## Explore
+- [Bar](bar.html) — the status bar, hover popup system, and bar designs
+- [Bar Modules](bar-modules.html) — CPU, memory, GPU, audio, music, battery, clock, Bluetooth, network, workspaces, tray
+- [Notifications](notifications.html) — the notification daemon, in-bar display, and popup history
+- [Lock Screen](lock-screen.html) — Wayland session lock with 5 designs and animations
+- [Settings Overlay](settings-overlay.html) — fuzzy search, all settings pages, filesystem browser, math evaluator
 
-- [**Features**](features.html) - Detailed feature breakdown
-- [**Installation**](installation.html) - Complete setup guide
-- [**Keybinds**](keybinds.html) - Full keybinding reference
-- [**Configuration**](configuration.html) - Config files and settings
-- [**Customization**](customization.html) - Themes, designs, and modules
-- [**Themes**](themes.html) - Color palettes and theming
-- [**Troubleshooting**](troubleshooting.html) - Common issues and fixes
-- [**Requirements**](requirements.html) - Dependencies list
+**Theming** — how colors work end to end:
+
+- [Theme Engine](theme-engine.html) — animated palette switching and system-wide sync
+- [Palette Extraction](palette-extraction.html) — extracting colors from wallpapers with WCAG enforcement
+- [Palettes](themes.html) — all 18 built-in color themes
+
+**Internals** — deeper into the architecture:
+
+- [IPC & Shell Root](ipc.html) — how keybinds and scripts talk to the running shell
+- [Configuration](configuration.html) — config file structure and watch mode
