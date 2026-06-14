@@ -5,11 +5,9 @@ title: Qaskade
 
 # Qaskade
 
-A keyboard-driven [Hyprland](https://hyprland.org) desktop shell powered by [Quickshell](https://quickshell.outfoxxed.me/).
+A keyboard-driven [Hyprland](https://hyprland.org) desktop shell powered by [Quickshell](https://quickshell.outfoxxed.me/). Modular, fully themeable, and documented end to end.
 
 ![Demo](https://github.com/quirijndubois/Qaskade/raw/main/demo.gif)
-
-## Quick Start
 
 ```bash
 git clone https://github.com/quirijndubois/Qaskade.git
@@ -17,27 +15,48 @@ cd Qaskade
 ./install.sh
 ```
 
-See [Installation](installation.html) for detailed setup.
+---
 
-## What's in here
+## Getting Started
 
-**Getting Started** — install, dependencies, and keybinds.
+- [Installation](installation.html) — dependencies, setup steps, Firefox sync
+- [Install Script](install-script.html) — how `install.sh` works, watch mode, what gets skipped
+- [Requirements](requirements.html) — full dependency list
+- [Keybinds](keybinds.html) — all keybindings
 
-**Components** — each major feature documented with a user guide and internal implementation details:
+---
 
-- [Bar](bar.html) — the status bar, hover popup system, and bar designs
+## Config Files
+
+Every file in the repo that gets synced to `~/.config/`:
+
+- [Hyprland](hyprland.html) — monitors, autostart, animations, keybinds, window rules
+- [Hypridle](hypridle.html) — idle timeouts, display sleep, auto-lock
+- [Kitty](kitty.html) — terminal opacity, remote control, live color sync
+
+---
+
+## Shell Components
+
+The Quickshell-based shell, each documented with a user guide and internal implementation details:
+
+- [Bar](bar.html) — the status bar, hover popup system, bar designs, multi-monitor
 - [Bar Modules](bar-modules.html) — CPU, memory, GPU, audio, music, battery, clock, Bluetooth, network, workspaces, tray
-- [Notifications](notifications.html) — the notification daemon, in-bar display, and popup history
-- [Lock Screen](lock-screen.html) — Wayland session lock with 5 designs and animations
-- [Settings Overlay](settings-overlay.html) — fuzzy search, all settings pages, filesystem browser, math evaluator
+- [Notifications](notifications.html) — D-Bus notification server, in-bar display, history
+- [Lock Screen](lock-screen.html) — Wayland session lock, 5 designs, animations, authentication
+- [Settings Overlay](settings-overlay.html) — fuzzy search, all pages, filesystem browser, math evaluator
+- [IPC & Shell Root](ipc.html) — how keybinds and scripts communicate with the running shell
 
-**Theming** — how colors work end to end:
+---
 
-- [Theme Engine](theme-engine.html) — animated palette switching and system-wide sync
-- [Palette Extraction](palette-extraction.html) — extracting colors from wallpapers with WCAG enforcement
+## Theming
+
+- [Theme Engine](theme-engine.html) — animated palette switching, system-wide sync, bar design system
+- [Palette Extraction](palette-extraction.html) — extracting colors from wallpapers, WCAG enforcement, jitter
 - [Palettes](themes.html) — all 18 built-in color themes
 
-**Internals** — deeper into the architecture:
+---
 
-- [IPC & Shell Root](ipc.html) — how keybinds and scripts talk to the running shell
-- [Configuration](configuration.html) — config file structure and watch mode
+## Help
+
+- [Troubleshooting](troubleshooting.html) — common issues and fixes
