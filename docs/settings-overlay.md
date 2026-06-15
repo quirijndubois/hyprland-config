@@ -47,6 +47,7 @@ The setting is persisted to `~/.config/quickshell/vim-binds`.
 | Monitor Layout | Main → monitor layout | Enable/disable monitors, resolution, scale, position, workspace assignment |
 | System | Main → system | **monitors** - per-monitor scale, enable/disable, layout; **input** - mouse sensitivity, natural scroll, scroll factor; **window** - layout, blur; **navigation** - vim binds |
 | Bluetooth | Main → bluetooth | Pair, connect, disconnect devices |
+| WiFi | Main → wifi | Scan, connect, disconnect, and forget networks |
 | Clipboard | Main → clipboard | Browse and re-copy clipboard history entries |
 | Apps | Main → apps | Browse and launch `.desktop` applications |
 | Notifications | Main → notifications | Full notification history with dismiss |
@@ -121,6 +122,25 @@ Monitor data is fetched from `hyprctl monitors -j`. The layout page renders each
 ### Workspace Rules
 
 Workspace-to-monitor assignments are read from `hyprctl workspacerules -j` and written back via `hyprctl keyword workspace rules`.
+
+### WiFi Page
+
+Network list is fetched with:
+```bash
+nmcli -e no -t -f IN-USE,SSID,SIGNAL,SECURITY dev wifi list
+```
+
+Results are deduplicated by SSID and sorted - connected network first, then descending signal strength. Signal strength is shown as `▂▄▆█` bars colored green / yellow / teal / red by level.
+
+**Keybinds on the wifi page:**
+
+| Key | Action |
+|---|---|
+| `Enter` | Connect (open networks) / disconnect (active network) / open password prompt (secured) |
+| `r` | Force rescan via `nmcli dev wifi rescan` then refresh list |
+| `Delete` | Forget the selected network (`nmcli connection delete`) |
+
+**Password prompt** - pressing Enter on a secured, unconnected network opens a modal overlay. Type the password (shown as `•` dots with a blinking cursor) and press Enter. Leaving the field empty and pressing Enter tries saved credentials. Escape cancels. `nmcli` stderr is shown in red if the connection fails.
 
 ### main-items Persistence
 

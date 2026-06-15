@@ -81,6 +81,12 @@ FloatingWindow {
     }
     property var appsList: []
     property var bluetoothDevices: []
+    property var wifiNetworks: []
+    property bool wifiScanning: false
+    property bool wifiPasswordMode: false
+    property string wifiPasswordInput: ""
+    property var wifiPendingNetwork: null
+    property string wifiError: ""
     property string currentLayout: "dwindle"
     property string monitorName: ""
     property string wallpapersDir: homeDir ? homeDir + "/wallpapers/" : ""
@@ -121,6 +127,8 @@ FloatingWindow {
     onPageChanged: {
         if (page !== "main") activeSubPage = page
         if (page === "bluetooth") btListProc.running = true
+        if (page === "wifi") { root.wifiScanning = true; wifiListProc.running = true }
+        if (page !== "wifi") { root.wifiPasswordMode = false; root.wifiPasswordInput = ""; root.wifiPendingNetwork = null; root.wifiError = "" }
         if (page === "layout") layoutQueryProc.running = true
         if (page === "clipboard") { clipDaemonProc.running = true; clipListProc.running = true }
         if (page === "monitor_layout") {
@@ -200,6 +208,10 @@ FloatingWindow {
         for (const d of bluetoothDevices) {
             const s = root.fuzzyScore(searchQuery, d.name)
             if (s > 0) results.push({ score: s, type: "bluetooth", label: d.name, mac: d.mac, connected: d.connected, paired: d.paired })
+        }
+        for (const n of wifiNetworks) {
+            const s = root.fuzzyScore(searchQuery, n.ssid)
+            if (s > 0) results.push({ score: s, type: "wifi", label: n.ssid, signal: n.signal, security: n.security, inUse: n.inUse })
         }
         for (const d of designOptions) {
             const s = Math.max(root.fuzzyScore(searchQuery, d.label), root.fuzzyScore(searchQuery, d.desc))
@@ -310,6 +322,7 @@ FloatingWindow {
         { id: "appearance",    label: "appearance",    icon: "" },
         { id: "apps",          label: "applications",  icon: "" },
         { id: "bluetooth",     label: "bluetooth",     icon: "" },
+        { id: "wifi",          label: "wifi",          icon: "󰤡" },
         { id: "clipboard",     label: "clipboard",     icon: "" },
         { id: "notifications", label: "notifications", icon: "" },
         { id: "system",        label: "system",        icon: "" },
@@ -332,6 +345,10 @@ FloatingWindow {
             selectedIndex = 0
             searchQuery = ""
             vimSearchMode = false
+            wifiPasswordMode = false
+            wifiPasswordInput = ""
+            wifiPendingNetwork = null
+            wifiError = ""
             Qt.callLater(() => keyNav.forceActiveFocus())
             focusGrabReady = false
             focusGrabTimer.restart()
@@ -455,6 +472,108 @@ FloatingWindow {
         if (btActionProc.running) return
         btActionProc.command = ["bluetoothctl", device.connected ? "disconnect" : "connect", device.mac]
         btActionProc.running = true
+    }
+
+    Process {
+        id: wifiListProc
+        command: ["python3", "-c",
+            "import subprocess\n" +
+            "def run(*c): return subprocess.run(list(c), capture_output=True, text=True).stdout\n" +
+            "al = run('nmcli','-e','no','-t','-f','ACTIVE,SSID','dev','wifi').split('\\n')\n" +
+            "active = next((':'.join(l.split(':')[1:]) for l in al if l.startswith('yes:')), '')\n" +
+            "known = set(run('nmcli','-e','no','-t','-f','NAME','connection','show').strip().split('\\n'))\n" +
+            "seen = set()\n" +
+            "for l in run('nmcli','-e','no','-t','-f','SSID,SIGNAL,SECURITY','dev','wifi','list').strip().split('\\n'):\n" +
+            " if not l: continue\n" +
+            " p = l.split(':')\n" +
+            " if len(p) < 3: continue\n" +
+            " sec = p[-1]; sig = p[-2]; ssid = ':'.join(p[:-2])\n" +
+            " if not ssid or not sig.isdigit() or ssid in seen: continue\n" +
+            " seen.add(ssid)\n" +
+            " iu = 'yes' if ssid == active else 'no'\n" +
+            " kn = 'yes' if ssid in known else 'no'\n" +
+            " print(iu + '\\t' + ssid + '\\t' + sig + '\\t' + sec + '\\t' + kn)\n"
+        ]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const nets = []
+                for (const line of this.text.trim().split("\n")) {
+                    if (!line) continue
+                    const p = line.split("\t")
+                    if (p.length < 5) continue
+                    const inUse = p[0] === "yes"
+                    const ssid = p[1]
+                    const signal = parseInt(p[2])
+                    const security = p[3]
+                    const known = p[4] === "yes"
+                    if (!ssid || isNaN(signal)) continue
+                    nets.push({ ssid, signal, security, inUse, known })
+                }
+                nets.sort((a, b) => (a.inUse !== b.inUse) ? (a.inUse ? -1 : 1) : b.signal - a.signal)
+                root.wifiNetworks = nets
+                root.wifiScanning = false
+            }
+        }
+    }
+
+    Process {
+        id: wifiActionProc
+        stdout: StdioCollector {}
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const msg = this.text.trim()
+                if (msg) { root.wifiError = msg; wifiErrorTimer.restart() }
+            }
+        }
+        onRunningChanged: {
+            if (!running) { root.wifiScanning = true; wifiListProc.running = true }
+        }
+    }
+
+    function connectWifi(network) {
+        if (wifiActionProc.running) return
+        if (network.inUse) {
+            wifiActionProc.command = ["sh", "-c",
+                "iface=$(nmcli -t -f DEVICE,TYPE dev | awk -F: '$2==\"wifi\"{print $1; exit}'); " +
+                "nmcli dev disconnect \"$iface\" 2>/dev/null"
+            ]
+        } else {
+            wifiActionProc.command = ["nmcli", "--wait", "15", "dev", "wifi", "connect", network.ssid]
+        }
+        root.wifiScanning = true
+        wifiActionProc.running = true
+    }
+
+    function connectWifiPassword(network, password) {
+        if (wifiActionProc.running) return
+        wifiActionProc.command = password === ""
+            ? ["nmcli", "--wait", "15", "dev", "wifi", "connect", network.ssid]
+            : ["nmcli", "--wait", "15", "dev", "wifi", "connect", network.ssid, "password", password]
+        root.wifiScanning = true
+        wifiActionProc.running = true
+    }
+
+    function forgetWifi(network) {
+        if (wifiActionProc.running) return
+        wifiActionProc.command = ["nmcli", "connection", "delete", network.ssid]
+        root.wifiScanning = true
+        wifiActionProc.running = true
+    }
+
+    Process {
+        id: wifiRescanProc
+        command: ["nmcli", "dev", "wifi", "rescan"]
+        stdout: StdioCollector {}
+        stderr: StdioCollector {}
+        onRunningChanged: {
+            if (!running) { root.wifiScanning = true; wifiListProc.running = true }
+        }
+    }
+
+    Timer {
+        id: wifiErrorTimer
+        interval: 3500
+        onTriggered: root.wifiError = ""
     }
 
     Process {
@@ -966,6 +1085,26 @@ FloatingWindow {
         Keys.onPressed: event => {
             const inSearch = Theme.vimBinds ? root.vimSearchMode : root.searchQuery !== ""
 
+            // WiFi password mode — intercept all input
+            if (root.wifiPasswordMode) {
+                if (event.key === Qt.Key_Escape) {
+                    root.wifiPasswordMode = false
+                    root.wifiPasswordInput = ""
+                    root.wifiPendingNetwork = null
+                } else if (event.key === Qt.Key_Backspace) {
+                    root.wifiPasswordInput = root.wifiPasswordInput.slice(0, -1)
+                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                    root.connectWifiPassword(root.wifiPendingNetwork, root.wifiPasswordInput)
+                    root.wifiPasswordMode = false
+                    root.wifiPasswordInput = ""
+                    root.wifiPendingNetwork = null
+                } else if (event.text.length > 0) {
+                    root.wifiPasswordInput += event.text
+                }
+                event.accepted = true
+                return
+            }
+
             if (Theme.vimBinds && !inSearch && event.key === Qt.Key_I) {
                 root.vimSearchMode = true
                 event.accepted = true
@@ -1034,6 +1173,8 @@ FloatingWindow {
                         appListView.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "bluetooth")
                         btListView.positionViewAtIndex(upScroll, ListView.Contain)
+                    else if (root.page === "wifi")
+                        wifiListView.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "design")
                         designList.positionViewAtIndex(upScroll, ListView.Contain)
                     else if (root.page === "layout")
@@ -1067,6 +1208,7 @@ FloatingWindow {
                              : root.page === "palette"        ? root.paletteOptions.length - 1
                              : root.page === "apps"           ? Math.max(0, root.appsList.length - 1)
                              : root.page === "bluetooth"      ? Math.max(0, root.bluetoothDevices.length - 1)
+                             : root.page === "wifi"           ? Math.max(0, root.wifiNetworks.length - 1)
                              : root.page === "design"         ? root.designOptions.length - 1
                              : root.page === "layout"         ? root.layoutOptions.length - 1
                              : root.page === "bar"            ? Math.max(0, root.barModules.length - 1)
@@ -1108,6 +1250,8 @@ FloatingWindow {
                         appListView.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "bluetooth")
                         btListView.positionViewAtIndex(downScroll, ListView.Contain)
+                    else if (root.page === "wifi")
+                        wifiListView.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "design")
                         designList.positionViewAtIndex(downScroll, ListView.Contain)
                     else if (root.page === "layout")
@@ -1233,6 +1377,22 @@ FloatingWindow {
                 return
             }
 
+            if (root.page === "wifi" && !inSearch) {
+                if (event.key === Qt.Key_R) {
+                    root.wifiScanning = true
+                    wifiRescanProc.running = false
+                    wifiRescanProc.running = true
+                    event.accepted = true
+                    return
+                }
+                if (event.key === Qt.Key_Delete) {
+                    const net = root.wifiNetworks[root.selectedIndex]
+                    if (net && net.known) root.forgetWifi(net)
+                    event.accepted = true
+                    return
+                }
+            }
+
             if (event.text && event.text.length === 1 && event.text.charCodeAt(0) >= 32) {
                 if (!Theme.vimBinds || inSearch) {
                     root.searchQuery += event.text
@@ -1291,6 +1451,17 @@ FloatingWindow {
             } else if (root.page === "bluetooth") {
                 const dev = root.bluetoothDevices[root.selectedIndex]
                 if (dev) root.toggleBluetooth(dev)
+            } else if (root.page === "wifi") {
+                const net = root.wifiNetworks[root.selectedIndex]
+                if (net) {
+                    if (net.inUse || net.security === "" || net.known) {
+                        root.connectWifi(net)
+                    } else {
+                        root.wifiPendingNetwork = net
+                        root.wifiPasswordInput = ""
+                        root.wifiPasswordMode = true
+                    }
+                }
             } else if (root.page === "design") {
                 const d = root.designOptions[root.selectedIndex]
                 if (d) Theme.design = d.id
@@ -1365,6 +1536,18 @@ FloatingWindow {
             else if (result.type === "palette") Theme.name = result.id
             else if (result.type === "app") { root.launchApp(result.exec, result.terminal); root.closeRequested() }
             else if (result.type === "bluetooth") { root.toggleBluetooth(result); return }
+            else if (result.type === "wifi") {
+                if (result.inUse || result.security === "" || result.known) {
+                    root.connectWifi(result)
+                } else {
+                    root.wifiPendingNetwork = result
+                    root.wifiPasswordInput = ""
+                    root.wifiPasswordMode = true
+                    root.searchQuery = ""
+                    root.page = "wifi"
+                }
+                return
+            }
             else if (result.type === "design") { Theme.design = result.id }
             else if (result.type === "layout") { root.applyLayout(result.id) }
             else if (result.type === "menu") { root.page = result.id; root.selectedIndex = 0 }
@@ -1784,6 +1967,227 @@ FloatingWindow {
                         }
 
                     }
+                }
+            }
+
+            // ── WiFi ──────────────────────────────────────────
+            Item {
+                anchors.fill: parent
+                visible: root.activeSubPage === "wifi"
+
+                Rectangle {
+                    id: wifiHeader
+                    width: parent.width
+                    height: 44
+                    color: Theme.surface
+
+                    Row {
+                        anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                        spacing: 14
+
+                        Text {
+                            text: "< back"
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 1
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        Text {
+                            text: "wifi"
+                            color: Theme.purple
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf + 1
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
+                    Text {
+                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                        text: root.wifiScanning ? "scanning..." : root.wifiNetworks.length + " networks"
+                        color: root.wifiScanning ? Theme.blue : Theme.subtext
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: sf - 2
+                    }
+                }
+
+                Rectangle { id: wifiDivider; anchors.top: wifiHeader.bottom; width: parent.width; height: 1; color: Theme.border }
+
+                Text {
+                    anchors.centerIn: parent
+                    visible: !root.wifiScanning && root.wifiNetworks.length === 0 && !root.wifiPasswordMode
+                    text: "no networks found"
+                    color: Theme.subtext
+                    font.family: "JetBrains Mono"
+                    font.pixelSize: sf
+                }
+
+                ListView {
+                    id: wifiListView
+                    anchors { left: parent.left; right: parent.right; top: wifiDivider.bottom; bottom: parent.bottom }
+                    model: root.wifiNetworks
+                    clip: true
+                    visible: root.wifiNetworks.length > 0 && !root.wifiPasswordMode
+
+                    delegate: Rectangle {
+                        required property var modelData
+                        required property int index
+
+                        width: wifiListView.width
+                        height: 52
+                        color: root.selectedIndex === index ? Theme.border : "transparent"
+
+                        Row {
+                            anchors { left: parent.left; leftMargin: 20; verticalCenter: parent.verticalCenter }
+                            spacing: 14
+
+                            Text {
+                                text: root.selectedIndex === index ? ">" : " "
+                                color: Theme.blue
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            Column {
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 2
+
+                                Text {
+                                    text: modelData.ssid
+                                    color: modelData.inUse ? Theme.green
+                                         : root.selectedIndex === index ? Theme.text : Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: sf
+                                }
+
+                                Text {
+                                    visible: modelData.security !== ""
+                                    text: modelData.security
+                                    color: Theme.subtext
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: sf - 3
+                                }
+                            }
+                        }
+
+                        Text {
+                            anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                            text: modelData.signal >= 75 ? "▂▄▆█"
+                                : modelData.signal >= 50 ? "▂▄▆ "
+                                : modelData.signal >= 25 ? "▂▄  "
+                                :                          "▂   "
+                            color: modelData.signal >= 75 ? Theme.green
+                                 : modelData.signal >= 50 ? Theme.yellow
+                                 : modelData.signal >= 25 ? Theme.teal
+                                 :                          Theme.red
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 1
+                        }
+
+                        Rectangle {
+                            anchors.bottom: parent.bottom
+                            width: parent.width; height: 1
+                            color: Theme.border; opacity: 0.3
+                        }
+                    }
+                }
+
+                // Password overlay
+                Item {
+                    anchors { left: parent.left; right: parent.right; top: wifiDivider.bottom; bottom: parent.bottom }
+                    visible: root.wifiPasswordMode
+
+                    Column {
+                        anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter }
+                        anchors.verticalCenterOffset: -16
+                        spacing: 0
+
+                        // Network name
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: root.wifiPendingNetwork ? root.wifiPendingNetwork.ssid : ""
+                            color: Theme.text
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf + 3
+                            font.bold: true
+                        }
+
+                        Item { width: 1; height: 4 }
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: root.wifiPendingNetwork ? root.wifiPendingNetwork.security : ""
+                            color: Theme.subtext
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 3
+                        }
+
+                        Item { width: 1; height: 20 }
+
+                        // Password field
+                        Rectangle {
+                            anchors { left: parent.left; right: parent.right; leftMargin: 24; rightMargin: 24 }
+                            height: 38
+                            color: Theme.border
+                            radius: 6
+
+                            Row {
+                                anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter }
+                                spacing: 0
+
+                                Text {
+                                    text: "•".repeat(root.wifiPasswordInput.length)
+                                    color: Theme.text
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: sf + 2
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                Rectangle {
+                                    width: 2; height: sf + 2
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: Theme.blue
+                                    visible: wifiCursorBlink.blinkOn
+                                }
+                            }
+
+                            Text {
+                                anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter }
+                                visible: root.wifiPasswordInput === ""
+                                text: "password"
+                                color: Theme.subtext
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: sf - 3
+                            }
+                        }
+
+                        Item { width: 1; height: 14 }
+
+                        // Error message
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            visible: root.wifiError !== ""
+                            text: root.wifiError
+                            color: Theme.red
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: sf - 3
+                            elide: Text.ElideRight
+                            width: parent.width - 48
+                        }
+
+                    }
+                }
+
+                Timer {
+                    id: wifiCursorBlink
+                    property bool blinkOn: true
+                    interval: 530
+                    repeat: true
+                    running: root.wifiPasswordMode
+                    onTriggered: blinkOn = !blinkOn
+                    onRunningChanged: if (!running) blinkOn = true
                 }
             }
 
@@ -3511,10 +3915,12 @@ FloatingWindow {
                                     : modelData.type === "clipboard" ? "clipboard"
                                     : modelData.type === "system_item" ? (modelData.sub || "system setting")
                                     : modelData.type === "bar_module" ? "bar module"
+                                    : modelData.type === "wifi" ? (modelData.inUse ? "connected" : "wifi")
                                     : modelData.type
                                 color: modelData.type === "wallpaper"  ? Theme.teal
                                      : modelData.type === "palette"    ? Theme.yellow
                                      : modelData.type === "bluetooth"  ? Theme.blue
+                                     : modelData.type === "wifi"       ? (modelData.inUse ? Theme.green : Theme.teal)
                                      : modelData.type === "design"     ? Theme.purple
                                      : modelData.type === "layout"     ? Theme.teal
                                      : modelData.type === "menu"       ? Theme.purple
@@ -3582,6 +3988,26 @@ FloatingWindow {
                                  : Theme.subtext
                             opacity: (modelData.type === "bluetooth" && modelData.connected) ? 1.0 : 0.35
                         }
+                    }
+
+                    // WiFi signal bars
+                    Text {
+                        anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                        visible: modelData.type === "wifi"
+                        text: modelData.type === "wifi"
+                            ? (modelData.signal >= 75 ? "▂▄▆█"
+                             : modelData.signal >= 50 ? "▂▄▆ "
+                             : modelData.signal >= 25 ? "▂▄  "
+                             :                          "▂   ")
+                            : ""
+                        color: modelData.type === "wifi"
+                             ? (modelData.signal >= 75 ? Theme.green
+                              : modelData.signal >= 50 ? Theme.yellow
+                              : modelData.signal >= 25 ? Theme.teal
+                              :                          Theme.red)
+                             : Theme.subtext
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: sf - 1
                     }
 
                     // Palette swatches

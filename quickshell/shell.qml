@@ -82,6 +82,37 @@ ShellRoot {
         }
     }
 
+    Process {
+        id: monitorReenableProc
+        stdout: StdioCollector {}
+        stderr: StdioCollector {}
+    }
+
+    // Debounce: hotplug events can fire in bursts
+    Timer {
+        id: monitorReenableTimer
+        interval: 1000
+        repeat: false
+        onTriggered: {
+            monitorReenableProc.command = ["sh", "-c",
+                "if [ -f \"$HOME/.config/hypr/user-settings.lua\" ]; then" +
+                "  sed -i 's/, disabled = true//g' \"$HOME/.config/hypr/user-settings.lua\";" +
+                "fi; hyprctl reload"
+            ]
+            monitorReenableProc.running = false
+            monitorReenableProc.running = true
+        }
+    }
+
+    // Re-enable all monitors whenever the connected monitor set changes,
+    // so a disconnected monitor can never leave the system with no active output.
+    Connections {
+        target: Quickshell
+        function onScreensChanged() {
+            monitorReenableTimer.restart()
+        }
+    }
+
     Variants {
         model: Quickshell.screens
 

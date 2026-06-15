@@ -41,6 +41,7 @@ title: Features
 - **Wallpaper manager** - browse and apply images with smooth transitions (fade, slide, wipe, wave, grow), per-monitor
 - **App launcher** - browse `.desktop` entries with icons
 - **Bluetooth manager** - pair, connect, disconnect devices from settings
+- **WiFi manager** - scan networks, connect with password entry, disconnect, and forget saved networks
 - **Clipboard history** - browse and re-copy entries via `cliphist`; searchable from fuzzy finder
 - **System settings** - live configuration via `hyprctl` and persistent `user-settings.lua`
 - **Blur toggle** - enable/disable Hyprland compositor blur; automatically adjusts Kitty opacity
